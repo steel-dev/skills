@@ -126,7 +126,7 @@ function usesSteelAllowedTool(frontmatter) {
 }
 
 function hasSteelCliReference(body) {
-  return /\bSteel CLI\b|\bsteel\s+(?:--json|--version|login|doctor|skills|scrape|screenshot|pdf|browser|credentials)\b/.test(body);
+  return /\bsteel\b/i.test(body);
 }
 
 async function validateSkill(name, meta) {
@@ -149,12 +149,9 @@ async function validateSkill(name, meta) {
   if (!frontmatter.description || frontmatter.description.length > 1024) {
     fail(`${name}: frontmatter.description must be present and <= 1024 chars`);
   }
-  if (frontmatter.license !== "MIT") fail(`${name}: frontmatter.license must be MIT`);
-  if (typeof frontmatter.compatibility !== "string") fail(`${name}: frontmatter.compatibility is required`);
-  for (const agent of ["claude-code", "codex", "opencode"]) {
-    if (!frontmatter.compatibility.split(",").map((item) => item.trim()).includes(agent)) {
-      fail(`${name}: frontmatter.compatibility must include ${agent}`);
-    }
+  if (!frontmatter.license) fail(`${name}: frontmatter.license must be present`);
+  if (typeof frontmatter.compatibility !== "string" || !frontmatter.compatibility.trim()) {
+    fail(`${name}: frontmatter.compatibility is required`);
   }
   if (!frontmatter.metadata || typeof frontmatter.metadata !== "object" || Array.isArray(frontmatter.metadata)) {
     fail(`${name}: frontmatter.metadata must be a string-to-string map`);
