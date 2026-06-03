@@ -256,6 +256,22 @@ function parseVerdict(stdout) {
   return { error: "no JSON object in judge result", raw: resultText.slice(0, 500) };
 }
 
+// The judge occasionally omits `overall` (no --json-schema enforcement in this build). Derive it
+// from the structured fields so the matrix never shows "?". Marks overall_derived for transparency.
+function normalizeVerdict(v) {
+  if (!v || v.error) return v;
+  if (!["pass", "partial", "fail"].includes(v.overall)) {
+    const a = Array.isArray(v.assertions) ? v.assertions : [];
+    const fails = a.filter((x) => x.verdict === "fail").length;
+    const passes = a.filter((x) => x.verdict === "pass").length;
+    if (v.skill_loaded === true && v.task_succeeded === true && fails === 0) v.overall = "pass";
+    else if (v.task_succeeded === true || v.skill_loaded === true || passes > 0) v.overall = "partial";
+    else v.overall = "fail";
+    v.overall_derived = true;
+  }
+  return v;
+}
+
 async function judge(task, agent, runDir, cwd, transcriptText) {
   const files = listOutputFiles(cwd);
   const filePreviews = files.slice(0, 12).map((f) => {
@@ -289,7 +305,7 @@ async function judge(task, agent, runDir, cwd, transcriptText) {
   if (config.judge.model) args.push("--model", config.judge.model);
   const r = await run(jCmd, args, { cwd: here, timeoutSec: 300 });
   writeFileSync(join(runDir, "judge-raw.json"), r.stdout || r.stderr);
-  return parseVerdict(r.stdout);
+  return normalizeVerdict(parseVerdict(r.stdout));
 }
 
 // ---- main -----------------------------------------------------------------
