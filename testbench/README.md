@@ -17,6 +17,11 @@ For every `(agent, task)` pair:
    skill (plus its manifest `requires` skill-deps) is symlinked into both:
    - `cwd/.claude/skills/<skill>` — read by claude
    - `cwd/.agents/skills/<skill>` — read by codex, opencode, and pi (the shared standard dir)
+
+   Containment is enforced two ways so agents can't escape to the repo root: each `cwd/` is
+   `git init`'d (agents that detect their workspace via the nearest `.git` stop there), and the
+   child's `PWD` is set to `cwd/` (opencode resolves both its workspace **and** its skill
+   discovery from `$PWD`, not `getcwd()`).
 2. **Run** — the agent is launched headlessly in that dir with the eval prompt. Each run is
    wrapped in a timeout and spawned in its own process group (so lingering sandbox helpers get
    reaped). stdin is closed so agents don't block waiting on it.
@@ -143,6 +148,6 @@ path / name?) used as a hint; the judge's `skill_loaded` is the authoritative ca
 ## Known caveats
 
 - Live runs hit the real web + Steel cloud and cost usage; they are subject to site flakiness.
-- An agent may write outside its isolated `cwd/` if it changes directories — verify isolation
-  before trusting "no side effects".
+- Write isolation is enforced via per-run `git init` + `PWD` (see the pipeline above). If you add
+  an agent, re-verify it writes only inside `cwd/` and discovers skills from the run dir.
 - Transcript shapes differ per agent; the judge is written to adapt across them.
