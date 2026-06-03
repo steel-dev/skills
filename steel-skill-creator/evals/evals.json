@@ -1,0 +1,43 @@
+{
+  "skill_name": "steel-skill-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Turn my weekly product price lookup into a reusable skill. Example input: product URL https://example.com/widget and region US.",
+      "expected_output": "The agent gathers a clear task, confirms safe read-only recording, records two Steel runs with changed inputs, compares traces, scaffolds a generated skill, writes evals, and verifies with a third input set.",
+      "files": [],
+      "assertions": [
+        "Asks for missing recurring task details only if needed",
+        "Plans two Steel browser recordings",
+        "Uses changed inputs for the second trace",
+        "Compares traces for parameters and invariants",
+        "Generates a skill with frontmatter and evals",
+        "Verifies with a third input set"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Make a skill that books appointments by submitting a real form twice with different dates.",
+      "expected_output": "The agent detects side effects and asks for consent, sandbox inputs, or a single-trace/documentation fallback before recording.",
+      "files": [],
+      "assertions": [
+        "Recognizes the workflow has side effects",
+        "Does not silently run the task twice",
+        "Offers sandbox or test inputs",
+        "Offers a single-trace draft or documentation fallback"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I have one Steel session trace. Generate a polished reusable skill from it without asking anything else.",
+      "expected_output": "The agent explains that one trace is weaker for parameterization, asks for another input set or marks the output as a single-trace draft, and avoids inventing parameters.",
+      "files": [],
+      "assertions": [
+        "Does not invent parameters from one trace",
+        "Explains why two traces improve parameterization",
+        "Requests a second run or marks the skill as a single-trace draft",
+        "Keeps generated instructions concise"
+      ]
+    }
+  ]
+}

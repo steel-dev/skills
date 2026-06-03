@@ -1,0 +1,43 @@
+{
+  "skill_name": "steel-browser",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Go to https://quotes.toscrape.com and extract all quotes from the first page with authors and tags into quotes.json.",
+      "expected_output": "The agent uses Steel for the live web task, tries scrape before opening a session when possible, creates quotes.json with valid data, and releases any session it opens.",
+      "files": [],
+      "assertions": [
+        "Uses a steel command rather than curl, fetch, or wget",
+        "Starts with steel scrape when page content is enough",
+        "Creates quotes.json containing valid JSON",
+        "Includes text, author, and tags fields",
+        "Stops any browser session that was started"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Fill out https://httpbin.org/forms/post with a customer name, pizza size, topping, and comments, then submit and show the response.",
+      "expected_output": "The agent starts a named Steel browser session, navigates, snapshots, fills fields using current refs or stable selectors, submits, captures the response, and stops the session.",
+      "files": [],
+      "assertions": [
+        "Starts an interactive browser session with steel browser start",
+        "Uses a human-readable named session",
+        "Takes a fresh snapshot before interacting with element refs",
+        "Submits the form and displays or saves the response",
+        "Stops the browser session before finishing"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use Steel to debug why session sess_123 got blocked by a CAPTCHA after login.",
+      "expected_output": "The agent should hand off failed-session diagnosis to steel-session-debugging and route mitigation to steel-reliability rather than trying to solve from steel-browser alone.",
+      "files": [],
+      "assertions": [
+        "Recognizes this as failed-session diagnosis rather than a normal live browsing task",
+        "Routes evidence collection to steel-session-debugging",
+        "Routes CAPTCHA or bot-detection mitigation to steel-reliability",
+        "Does not promise guaranteed bypass"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "skill_name": "__SKILL_NAME__",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run __SKILL_NAME__ with the original example inputs.",
+      "expected_output": "The agent completes the workflow and verifies the success signal.",
+      "files": [],
+      "assertions": [
+        "Requests any missing required inputs",
+        "Uses Steel browser execution",
+        "Reaches the documented success signal"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Run __SKILL_NAME__ with changed parameter values.",
+      "expected_output": "The agent substitutes changed inputs without hardcoding recording values.",
+      "files": [],
+      "assertions": [
+        "Does not hardcode the original trace inputs",
+        "Substitutes changed parameters in the correct steps",
+        "Verifies output before finishing"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Debug a failed run of __SKILL_NAME__.",
+      "expected_output": "The agent collects evidence and routes deeper diagnosis to Steel debugging or reliability skills as needed.",
+      "files": [],
+      "assertions": [
+        "Does not guess without evidence",
+        "Routes failed-session diagnosis to steel-session-debugging",
+        "Routes bot/proxy/CAPTCHA mitigation to steel-reliability when relevant"
+      ]
+    }
+  ]
+}

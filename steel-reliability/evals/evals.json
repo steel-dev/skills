@@ -1,0 +1,43 @@
+{
+  "skill_name": "steel-reliability",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "My Steel automation gets a 403 and a 'verify you are human' page. Plan the least invasive fix.",
+      "expected_output": "The agent identifies reliability signals, preserves evidence, checks feature access, starts with identity/pacing, then escalates to proxies or CAPTCHA only when justified.",
+      "files": [],
+      "assertions": [
+        "Identifies 403 and verify-human copy as reliability signals",
+        "Preserves evidence before changing configuration",
+        "Checks Steel feature access before paid proxy or CAPTCHA options",
+        "Starts with least invasive mitigations",
+        "Does not promise guaranteed bypass",
+        "Includes a verification rerun"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm on Hobby but have PROXY_SERVER. Show the safe Steel BYOP pattern and explain what not to enable.",
+      "expected_output": "The agent uses BYOP via environment variable, avoids Steel-managed useProxy true on Hobby, protects proxy credentials, and handles transient proxy errors.",
+      "files": [],
+      "assertions": [
+        "Uses BYOP with a proxy server from an environment variable",
+        "Does not use Steel-managed useProxy true as the Hobby-plan solution",
+        "States BYOP is separate from Steel-managed proxy bandwidth",
+        "Keeps proxy credentials out of logs and prompts",
+        "Mentions retry or fallback for transient tunnel errors"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Steel session sess_123 failed but I don't know why. Figure out what happened.",
+      "expected_output": "The agent should route first to steel-session-debugging because the failure class is unknown and evidence has not been collected.",
+      "files": [],
+      "assertions": [
+        "Does not start with proxy or CAPTCHA mitigation",
+        "Routes unknown failed-session diagnosis to steel-session-debugging",
+        "Requests or uses session diagnostics before proposing reliability changes"
+      ]
+    }
+  ]
+}

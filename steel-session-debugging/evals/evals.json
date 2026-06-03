@@ -1,0 +1,43 @@
+{
+  "skill_name": "steel-session-debugging",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Debug why Steel session sess_123 failed after the login step.",
+      "expected_output": "The agent uses the provided session ID, collects or attempts to collect session metadata, browser logs, agent logs, and agent traces, then gives evidence-backed diagnosis with a next verification step.",
+      "files": [],
+      "assertions": [
+        "Uses or requests a Steel session ID",
+        "Runs or recommends Steel CLI diagnostics before raw API calls",
+        "Distinguishes browser logs, raw agent logs, and agent traces",
+        "Builds a timeline of actions and failures",
+        "Provides evidence-backed diagnosis",
+        "Suggests a smallest useful verification step"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A Steel run hit a 403 and then a CAPTCHA page. Tell me how to investigate without leaking secrets.",
+      "expected_output": "The agent collects evidence, redacts sensitive logs, identifies bot/CAPTCHA signals, and routes mitigation planning to steel-reliability after evidence collection.",
+      "files": [],
+      "assertions": [
+        "Starts with evidence collection instead of guessing",
+        "Mentions redaction before sharing logs or traces",
+        "Identifies 403 and CAPTCHA as reliability signals",
+        "Does not promise guaranteed bypass",
+        "Hands off mitigation to steel-reliability after collecting evidence"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use Steel to browse https://example.com right now and summarize the page.",
+      "expected_output": "The agent should not use steel-session-debugging because this is a live browsing task, not a failed-session diagnosis.",
+      "files": [],
+      "assertions": [
+        "Does not activate steel-session-debugging as the primary skill",
+        "Routes live browsing to steel-browser",
+        "Does not collect logs or traces for a session that has not failed"
+      ]
+    }
+  ]
+}

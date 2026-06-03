@@ -1,0 +1,117 @@
+{
+  "version": "2026.06.02",
+  "schema": 1,
+  "default_branch": "main",
+  "skills": {
+    "steel-browser": {
+      "title": "Steel Browser",
+      "description": "Skill for agent-driven web workflows using Steel cloud browsers and API tools.",
+      "category": "operate",
+      "stage": "ga",
+      "path": "steel-browser",
+      "version": "0.1.0",
+      "owner": "Jun",
+      "cli": {
+        "include": true
+      },
+      "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
+      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-browser",
+      "install": {
+        "skills_cli": "npx skills add steel-dev/skills --skill steel-browser",
+        "steel_cli": "steel skills install steel-browser"
+      },
+      "requires": ["steel-cli"],
+      "platform_features": ["browser-actions", "sessions", "captchas", "credentials", "profiles"]
+    },
+    "steel-developer": {
+      "title": "Steel Developer",
+      "description": "Skill for building reusable software on Steel cloud browsers with SDKs, REST APIs, Playwright, Puppeteer, Stagehand, Browser Use, credentials, profiles, files, extensions, embeds, computer-use APIs, and implementation-safe handoffs to debugging and reliability skills.",
+      "category": "build",
+      "stage": "ga",
+      "path": "steel-developer",
+      "version": "0.1.0",
+      "owner": "Dane",
+      "cli": {
+        "include": true
+      },
+      "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
+      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-developer",
+      "install": {
+        "skills_cli": "npx skills add steel-dev/skills --skill steel-developer",
+        "steel_cli": "steel skills install steel-developer"
+      },
+      "requires": ["steel-cli"],
+      "platform_features": [
+        "sdk",
+        "sessions",
+        "browser-actions",
+        "credentials",
+        "profiles",
+        "proxies",
+        "captchas",
+        "files",
+        "extensions"
+      ]
+    },
+    "steel-session-debugging": {
+      "title": "Steel Session Debugging",
+      "description": "Skill for diagnosing failed Steel browser sessions from session metadata, browser logs, raw agent logs, semantic agent traces, replay artifacts, network failures, screenshots, and errors.",
+      "category": "debug",
+      "stage": "beta",
+      "path": "steel-session-debugging",
+      "version": "0.1.0",
+      "owner": "Nas",
+      "cli": {
+        "include": true
+      },
+      "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
+      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-session-debugging",
+      "install": {
+        "skills_cli": "npx skills add steel-dev/skills --skill steel-session-debugging",
+        "steel_cli": "steel skills install steel-session-debugging"
+      },
+      "requires": ["steel-cli"],
+      "platform_features": ["sessions", "browser-logs", "agent-logs", "agent-traces", "replay"]
+    },
+    "steel-reliability": {
+      "title": "Steel Reliability",
+      "description": "Skill for diagnosing and mitigating Steel automation reliability issues including bot detection, CAPTCHA loops, proxy failures, persistent identity problems, login state, pacing, and retry strategy.",
+      "category": "reliability",
+      "stage": "beta",
+      "path": "steel-reliability",
+      "version": "0.1.0",
+      "owner": "Nas",
+      "cli": {
+        "include": true
+      },
+      "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
+      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-reliability",
+      "install": {
+        "skills_cli": "npx skills add steel-dev/skills --skill steel-reliability",
+        "steel_cli": "steel skills install steel-reliability"
+      },
+      "requires": ["steel-cli", "steel-session-debugging"],
+      "platform_features": ["sessions", "proxies", "captchas", "profiles", "credentials"]
+    },
+    "steel-skill-creator": {
+      "title": "Steel Skill Creator",
+      "description": "Compiles a recurring web task into a reusable, parameterized agent skill by driving the task twice in a Steel browser, capturing parameterization-quality traces, then authoring and verifying a skill from them.",
+      "category": "create",
+      "stage": "beta",
+      "path": "steel-skill-creator",
+      "version": "0.1.0",
+      "owner": "Niko",
+      "cli": {
+        "include": true
+      },
+      "agents": ["claude-code"],
+      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-skill-creator",
+      "install": {
+        "skills_cli": "npx skills add steel-dev/skills --skill steel-skill-creator",
+        "steel_cli": "steel skills install steel-skill-creator"
+      },
+      "requires": ["steel-cli", "steel-browser"],
+      "platform_features": ["sessions", "agent-traces", "browser-actions"]
+    }
+  }
+}
