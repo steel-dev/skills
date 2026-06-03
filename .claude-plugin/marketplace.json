@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "steel-skills",
+  "owner": {
+    "name": "Steel",
+    "url": "https://steel.dev"
+  },
+  "metadata": {
+    "description": "Official agent skills for Steel cloud browsers: live web automation, SDK development, session debugging, reliability, and skill authoring.",
+    "version": "2026.06.02"
+  },
+  "plugins": [
+    {
+      "name": "steel-browser",
+      "source": "./steel-browser",
+      "description": "Skill for agent-driven web workflows using Steel cloud browsers and API tools.",
+      "version": "0.1.0",
+      "category": "operate",
+      "license": "MIT",
+      "keywords": [
+        "steel",
+        "browser-actions",
+        "sessions",
+        "captchas",
+        "credentials",
+        "profiles"
+      ],
+      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-browser"
+    },
+    {
+      "name": "steel-developer",
+      "source": "./steel-developer",
+      "description": "Skill for building reusable software on Steel cloud browsers with SDKs, REST APIs, Playwright, Puppeteer, Stagehand, Browser Use, credentials, profiles, files, extensions, embeds, computer-use APIs, and implementation-safe handoffs to debugging and reliability skills.",
+      "version": "0.1.0",
+      "category": "build",
+      "license": "MIT",
+      "keywords": [
+        "steel",
+        "sdk",
+        "sessions",
+        "browser-actions",
+        "credentials",
+        "profiles",
+        "proxies",
+        "captchas",
+        "files",
+        "extensions"
+      ],
+      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-developer"
+    },
+    {
+      "name": "steel-session-debugging",
+      "source": "./steel-session-debugging",
+      "description": "Skill for diagnosing failed Steel browser sessions from session metadata, browser logs, raw agent logs, semantic agent traces, replay artifacts, network failures, screenshots, and errors.",
+      "version": "0.1.0",
+      "category": "debug",
+      "license": "MIT",
+      "keywords": [
+        "steel",
+        "sessions",
+        "browser-logs",
+        "agent-logs",
+        "agent-traces",
+        "replay"
+      ],
+      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-session-debugging"
+    },
+    {
+      "name": "steel-reliability",
+      "source": "./steel-reliability",
+      "description": "Skill for diagnosing and mitigating Steel automation reliability issues including bot detection, CAPTCHA loops, proxy failures, persistent identity problems, login state, pacing, and retry strategy.",
+      "version": "0.1.0",
+      "category": "reliability",
+      "license": "MIT",
+      "keywords": [
+        "steel",
+        "sessions",
+        "proxies",
+        "captchas",
+        "profiles",
+        "credentials"
+      ],
+      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-reliability"
+    },
+    {
+      "name": "steel-skill-creator",
+      "source": "./steel-skill-creator",
+      "description": "Compiles a recurring web task into a reusable, parameterized agent skill by driving the task twice in a Steel browser, capturing parameterization-quality traces, then authoring and verifying a skill from them.",
+      "version": "0.1.0",
+      "category": "create",
+      "license": "MIT",
+      "keywords": [
+        "steel",
+        "sessions",
+        "agent-traces",
+        "browser-actions"
+      ],
+      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-skill-creator"
+    }
+  ]
+}

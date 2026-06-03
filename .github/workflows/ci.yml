@@ -16,5 +16,7 @@ jobs:
           node-version: 22
       - name: Validate skills catalog
         run: node scripts/validate-skills.mjs
+      - name: Check marketplace.json is in sync with manifest
+        run: node scripts/generate-marketplace.mjs --check
       - name: Smoke test skills installer
         run: npx skills add . --list
