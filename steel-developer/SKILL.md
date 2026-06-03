@@ -1,6 +1,6 @@
 ---
 name: steel-developer
-description: Builds reusable software on Steel cloud browsers with SDK/REST sessions, Playwright, Puppeteer, Stagehand, Browser Use, credentials, profiles, files, extensions, live embeds, computer-use APIs, proxies, and CAPTCHA APIs. Use only when writing, debugging, or explaining application code, scripts, reusable workflows, examples, or docs that run on Steel. Do not use for live web browsing performed by the agent; use steel-browser. Route failed-session diagnosis to steel-session-debugging and reliability mitigation to steel-reliability.
+description: Use this skill when the user wants reusable code, scripts, examples, or docs that build on Steel cloud browsers with SDKs, REST APIs, Playwright, Puppeteer, Stagehand, Browser Use, credentials, profiles, files, extensions, embeds, proxies, or CAPTCHA APIs. Do not use for live web browsing performed by the agent; use steel-browser. Route failed-session diagnosis to steel-session-debugging and reliability mitigation to steel-reliability.
 license: MIT
 compatibility: claude-code,codex,cursor,opencode,pi
 metadata:

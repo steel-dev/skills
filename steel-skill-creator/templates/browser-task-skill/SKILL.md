@@ -1,6 +1,12 @@
 ---
 name: __SKILL_NAME__
-description: __DESCRIPTION__
+description: '__DESCRIPTION__'
+license: MIT
+compatibility: claude-code,codex,opencode
+metadata:
+  owner: steel
+  category: browser-task
+  stage: experimental
 ---
 
 # __SKILL_NAME__

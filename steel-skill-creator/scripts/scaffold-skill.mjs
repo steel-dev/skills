@@ -56,6 +56,10 @@ async function replaceInFile(path, replacements) {
   await writeFile(path, content);
 }
 
+function yamlSingleQuoted(value) {
+  return value.replace(/'/g, "''");
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const template = resolve(fileURLToPath(new URL("..", import.meta.url)), "templates", "browser-task-skill");
@@ -67,9 +71,12 @@ async function main() {
 
   await mkdir(resolve(args.out), { recursive: true });
   await cp(template, target, { recursive: true, force: true });
+  const description =
+    args.description ??
+    `Performs a recurring browser task with Steel. Use when the user asks to run the ${args.name} workflow with concrete inputs.`;
   await replaceInFile(resolve(target, "SKILL.md"), {
     "__SKILL_NAME__": args.name,
-    "__DESCRIPTION__": args.description ?? `Performs a recurring browser task with Steel. Use when the user asks to run the ${args.name} workflow with concrete inputs.`,
+    "__DESCRIPTION__": yamlSingleQuoted(description),
   });
   await replaceInFile(resolve(target, "README.md"), {
     "__SKILL_NAME__": args.name,

@@ -2,15 +2,13 @@
 name: steel-browser
 allowed-tools:
   - "Bash(steel:*)"
-description: >-
-  Use this skill for live web tasks where WebFetch or curl would fail or be
-  insufficient: JavaScript-rendered pages, forms, screenshots, PDFs, login
-  flows, CAPTCHA/bot-protection flows, and multi-step navigation. It runs a
-  real Steel cloud browser through the Steel CLI. Use when the agent should
-  visit, click, type, scrape, screenshot, or extract now. Do not use for writing
-  reusable Steel SDK/API code; use steel-developer for code. If a live task
-  fails, hand off to steel-session-debugging; if evidence points to bot
-  detection, proxies, CAPTCHA, or identity, hand off to steel-reliability.
+description: 'Use this skill for live web tasks where WebFetch or curl would fail or be insufficient: JavaScript-rendered pages, forms, screenshots, PDFs, login flows, CAPTCHA/bot-protection flows, and multi-step navigation. It runs a real Steel cloud browser through the Steel CLI. Use when the agent should visit, click, type, scrape, screenshot, or extract now. Do not use for writing reusable Steel SDK/API code; use steel-developer for code. If a live task fails, hand off to steel-session-debugging; if evidence points to bot detection, proxies, CAPTCHA, or identity, hand off to steel-reliability.'
+license: MIT
+compatibility: claude-code,codex,cursor,opencode,pi
+metadata:
+  owner: steel
+  category: operate
+  stage: ga
 ---
 
 # Steel Browser

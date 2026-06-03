@@ -1,6 +1,6 @@
 ---
 name: steel-reliability
-description: Diagnoses and mitigates Steel automation reliability issues including bot detection, CAPTCHA loops, proxy failures, profile or identity problems, login persistence, suspicious pacing, and retry strategy. Use when the user sees 403s, access denied, verify-you-are-human pages, proxy errors, CAPTCHA failures, redirect loops, or asks about stealth, proxies, CAPTCHA solving, profiles, credentials, or reliable logins. Do not use as a first step for unknown failed sessions; collect evidence with steel-session-debugging first when needed.
+description: Use this skill when a Steel automation appears unreliable because of bot detection, CAPTCHA loops, 403/access-denied or verify-you-are-human pages, proxy failures, profile or identity problems, credential or login persistence issues, suspicious pacing, redirect loops, or retry strategy, or when the user asks about stealth, proxies, CAPTCHA solving, profiles, credentials, or reliable logins. Do not use as a first step for unknown failed sessions; collect evidence with steel-session-debugging first when needed.
 license: MIT
 compatibility: claude-code,codex,cursor,opencode,pi
 metadata:

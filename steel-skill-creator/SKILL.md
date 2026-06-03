@@ -1,16 +1,12 @@
 ---
 name: steel-skill-creator
-description: >
-  Compile a recurring web task into a reusable, parameterized agent skill.
-  The agent drives the task itself twice in a Steel browser to capture
-  parameterization-quality traces, then authors a skill from them and verifies
-  it. Use when the user describes a web task they expect to repeat — phrases
-  like "make this a skill", "I want to automate this", "turn this into something
-  I can run later", "I keep doing this manually", or whenever a task has
-  identifiable inputs (search terms, dates, IDs, routes) and a clear output.
-  Especially appropriate for recurring web work: scheduled scrapes, form
-  submissions, data extraction, monitoring flows, price probes, login-gated
-  reports. Do not use for one-off web tasks — use `steel-browser` for those.
+description: Use this skill when the user wants to turn a recurring browser workflow into a reusable, parameterized agent skill, especially when the task has concrete inputs and a clear output such as scheduled scrapes, form submissions, data extraction, monitoring flows, price probes, or login-gated reports. Do not use for one-off web tasks; use steel-browser.
+license: MIT
+compatibility: claude-code,codex,cursor,opencode,pi
+metadata:
+  owner: steel
+  category: create
+  stage: beta
 ---
 
 # Steel Skill Creator
@@ -30,7 +26,6 @@ Do not try to handle every edge case programmatically. Use your judgment. The re
 ## Prerequisites
 
 - `steel` CLI is installed and authenticated for browser driving.
-- `steel` CLI is authenticated. Run `steel doctor --preflight` if trace fetching fails.
 - The `steel-browser` skill is available — you'll use the same primitives (`steel browser start`, `navigate`, `snapshot`, `click`, `fill`, `wait`, etc.) to drive both recording sessions.
 - The task is described clearly enough that you can execute it. If the description is too vague ("automate my browsing"), ask for specifics before doing anything else.
 

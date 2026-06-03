@@ -1,6 +1,6 @@
 ---
 name: steel-session-debugging
-description: Diagnoses failed Steel browser sessions by inspecting session metadata, browser logs, raw agent logs, semantic agent traces, replay links, screenshots, network failures, and errors. Use when the user provides a Steel session ID, failed automation run, timeout, blocked page, browser error, or unexpected result and wants evidence-backed diagnosis. Do not use for first-pass bot mitigation; collect evidence here, then hand off to steel-reliability for proxy, CAPTCHA, identity, or anti-bot fixes.
+description: Use this skill when the user provides a failed Steel session ID, failed automation run, timeout, browser error, blocked page, or unexpected result and wants evidence-backed diagnosis from session metadata, browser logs, raw agent logs, semantic traces, replay links, screenshots, network failures, or errors. Do not use for first-pass bot mitigation; collect evidence here, then hand off to steel-reliability for proxy, CAPTCHA, identity, or anti-bot fixes.
 license: MIT
 compatibility: claude-code,codex,cursor,opencode,pi
 metadata:
