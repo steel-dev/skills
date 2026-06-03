@@ -19,7 +19,7 @@
     },
     "opencode": {
       "enabled": true,
-      "model": "zai-coding-plan/glm-5.1",
+      "model": "openai/gpt-5.5",
       "timeoutSec": 600,
       "manifestName": "opencode"
     },

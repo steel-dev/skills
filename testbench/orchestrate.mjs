@@ -1,7 +1,7 @@
 // ABOUTME: Runs skill eval prompts through claude/codex/opencode/pi headlessly in isolated dirs.
 // ABOUTME: Captures each agent's transcript, then (optionally) judges the result with claude.
 
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import {
   existsSync, mkdirSync, readFileSync, writeFileSync, symlinkSync, copyFileSync, readdirSync, statSync,
 } from "node:fs";
@@ -83,6 +83,10 @@ function setupRunDir(agent, task) {
   const runDir = join(here, "runs", agent, task.task_id, ts());
   const cwd = join(runDir, "cwd");
   mkdirSync(cwd, { recursive: true });
+  // Make cwd a self-contained project root. Agents (opencode, claude, codex, pi) detect their
+  // workspace by walking up to the nearest .git; without this they escape to the repo root and
+  // write there. A local .git stops the upward walk and contains all file writes to cwd.
+  try { execFileSync("git", ["init", "-q"], { cwd }); } catch { /* git missing — best effort */ }
   // Claude reads .claude/skills; codex/opencode/pi read .agents/skills.
   const claudeSkills = join(cwd, ".claude", "skills");
   const agentsSkills = join(cwd, ".agents", "skills");
@@ -102,7 +106,9 @@ function run(cmd, args, { cwd, timeoutSec }) {
     // grandchildren (e.g. codex sandbox helpers that hold the stdout pipe open) on timeout.
     const child = spawn(cmd, args, {
       cwd,
-      env: process.env, // agents use their own persistent auth; env passed through for pi/others
+      // Override PWD to the run dir: some agents (opencode) resolve their workspace from $PWD
+      // rather than getcwd(), and would otherwise escape to the inherited repo-root PWD.
+      env: { ...process.env, PWD: cwd },
       stdio: ["ignore", "pipe", "pipe"], // close stdin so agents don't block waiting on it
       detached: true,
     });
