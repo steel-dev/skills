@@ -1,0 +1,7 @@
+# ABOUTME: Keep generated run artifacts and any local secrets out of git.
+# ABOUTME: Only harness source (config, scripts, runners, judge) is tracked.
+runs/
+tasks.json
+.env
+.env.local
+REPORT.md
