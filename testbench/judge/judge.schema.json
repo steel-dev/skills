@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["skill_loaded", "skill_load_evidence", "assertions", "task_succeeded", "overall", "summary"],
+  "properties": {
+    "skill_loaded": {
+      "type": "boolean",
+      "description": "True only if the transcript shows the agent actually read/invoked the skill under test (e.g. read its SKILL.md, a skill tool call, or clearly followed its specific guidance)."
+    },
+    "skill_load_evidence": {
+      "type": "string",
+      "description": "Concrete evidence from the transcript for the skill_loaded verdict (quote a tool call, path, or distinctive instruction)."
+    },
+    "assertions": {
+      "type": "array",
+      "description": "One entry per assertion, in the order given.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "verdict", "evidence"],
+        "properties": {
+          "text": { "type": "string" },
+          "verdict": { "type": "string", "enum": ["pass", "fail", "unclear"] },
+          "evidence": { "type": "string", "description": "Short justification grounded in the transcript or created files." }
+        }
+      }
+    },
+    "task_succeeded": {
+      "type": "boolean",
+      "description": "True if the end goal of the prompt was actually achieved (correct files/outputs exist and are valid)."
+    },
+    "overall": {
+      "type": "string",
+      "enum": ["pass", "partial", "fail"],
+      "description": "pass = skill used AND task done AND assertions mostly pass; partial = meaningful progress but gaps; fail = skill not used or task not done."
+    },
+    "summary": { "type": "string", "description": "2-4 sentences explaining the verdict and any notable agent behavior." }
+  }
+}
