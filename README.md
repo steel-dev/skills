@@ -28,13 +28,13 @@ npx skills add steel-dev/skills --skill steel-browser -a claude-code -g
 
 ## Skills
 
-| Skill | Owner | Use when |
-| --- | --- | --- |
-| `steel-browser` | Jun | The agent should operate a real Steel browser now. |
-| `steel-developer` | Dane | The agent should write reusable code that runs on Steel. |
-| `steel-session-debugging` | Nas | The agent should diagnose a failed Steel session from logs, traces, and replay evidence. |
-| `steel-reliability` | Nas | The agent should diagnose bot-detection, CAPTCHA, proxy, identity, or login reliability issues. |
-| `steel-skill-creator` | Niko | The agent should turn a repeated browser task into a reusable skill. |
+| Skill                     | Use when                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| `steel-browser`           | The agent should operate a real Steel browser now.                                              |
+| `steel-developer`         | The agent should write reusable code that runs on Steel.                                        |
+| `steel-session-debugging` | The agent should diagnose a failed Steel session from logs, traces, and replay evidence.        |
+| `steel-reliability`       | The agent should diagnose bot-detection, CAPTCHA, proxy, identity, or login reliability issues. |
+| `steel-skill-creator`     | The agent should turn a repeated browser task into a reusable skill.                            |
 
 ## Which skill should I use?
 
