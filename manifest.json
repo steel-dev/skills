@@ -15,7 +15,7 @@
         "include": true
       },
       "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
-      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-browser",
+      "docs_url": "https://docs.steel.dev/overview/skills/available-skills/steel-browser",
       "install": {
         "skills_cli": "npx skills add steel-dev/skills --skill steel-browser",
         "steel_cli": "steel skills install steel-browser"
@@ -35,7 +35,7 @@
         "include": true
       },
       "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
-      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-developer",
+      "docs_url": "https://docs.steel.dev/overview/skills/available-skills/steel-developer",
       "install": {
         "skills_cli": "npx skills add steel-dev/skills --skill steel-developer",
         "steel_cli": "steel skills install steel-developer"
@@ -65,7 +65,7 @@
         "include": true
       },
       "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
-      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-session-debugging",
+      "docs_url": "https://docs.steel.dev/overview/skills/available-skills/steel-session-debugging",
       "install": {
         "skills_cli": "npx skills add steel-dev/skills --skill steel-session-debugging",
         "steel_cli": "steel skills install steel-session-debugging"
@@ -85,7 +85,7 @@
         "include": true
       },
       "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
-      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-reliability",
+      "docs_url": "https://docs.steel.dev/overview/skills/available-skills/steel-reliability",
       "install": {
         "skills_cli": "npx skills add steel-dev/skills --skill steel-reliability",
         "steel_cli": "steel skills install steel-reliability"
@@ -105,7 +105,7 @@
         "include": true
       },
       "agents": ["claude-code"],
-      "docs_url": "https://docs.steel.dev/overview/agent-skills/steel-skill-creator",
+      "docs_url": "https://docs.steel.dev/overview/skills/available-skills/steel-skill-creator",
       "install": {
         "skills_cli": "npx skills add steel-dev/skills --skill steel-skill-creator",
         "steel_cli": "steel skills install steel-skill-creator"

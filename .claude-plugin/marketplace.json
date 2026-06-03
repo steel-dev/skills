@@ -25,7 +25,7 @@
         "credentials",
         "profiles"
       ],
-      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-browser"
+      "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-browser"
     },
     {
       "name": "steel-developer",
@@ -46,7 +46,7 @@
         "files",
         "extensions"
       ],
-      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-developer"
+      "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-developer"
     },
     {
       "name": "steel-session-debugging",
@@ -63,7 +63,7 @@
         "agent-traces",
         "replay"
       ],
-      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-session-debugging"
+      "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-session-debugging"
     },
     {
       "name": "steel-reliability",
@@ -80,7 +80,7 @@
         "profiles",
         "credentials"
       ],
-      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-reliability"
+      "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-reliability"
     },
     {
       "name": "steel-skill-creator",
@@ -95,7 +95,7 @@
         "agent-traces",
         "browser-actions"
       ],
-      "homepage": "https://docs.steel.dev/overview/agent-skills/steel-skill-creator"
+      "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-skill-creator"
     }
   ]
 }
