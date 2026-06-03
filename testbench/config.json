@@ -1,0 +1,34 @@
+{
+  "_comment": "ABOUTME: Per-agent run config for the cross-agent skill testbench. ABOUTME: model=null uses the agent's own default/auth; timeoutSec wraps every headless run.",
+  "smokeEvalId": 1,
+  "judge": { "agent": "claude", "model": null, "cmd": null },
+  "agents": {
+    "claude": {
+      "enabled": true,
+      "model": null,
+      "timeoutSec": 600,
+      "manifestName": "claude-code",
+      "cmd": null,
+      "_cmd_note": "null = auto: prefer `claude-team` (team plan, runs with --dangerously-skip-permissions) if on PATH, else `claude`."
+    },
+    "codex": {
+      "enabled": true,
+      "model": null,
+      "timeoutSec": 600,
+      "manifestName": "codex"
+    },
+    "opencode": {
+      "enabled": true,
+      "model": "zai-coding-plan/glm-5.1",
+      "timeoutSec": 600,
+      "manifestName": "opencode"
+    },
+    "pi": {
+      "enabled": true,
+      "model": "openai/gpt-5.5",
+      "timeoutSec": 600,
+      "manifestName": "pi",
+      "_auth_note": "pi has no persistent auth; runner passes --api-key from OPENAI_API_KEY (loaded from testbench/.env)."
+    }
+  }
+}
