@@ -30,7 +30,8 @@ function loadDotenv() {
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
-    if (!(key in process.env)) process.env[key] = val;
+    // Override missing OR empty existing values (direnv/pass can leave keys present-but-empty).
+    if (!process.env[key]) process.env[key] = val;
   }
 }
 loadDotenv();
@@ -63,6 +64,11 @@ const rejudgeDir = opt("rejudge"); // path to an existing run dir; re-runs only 
 
 // ---- helpers --------------------------------------------------------------
 const ts = () => new Date().toISOString().replace(/[:.]/g, "-");
+
+// Mask secret values (e.g. the arg after --api-key) for logging and on-disk meta.
+function redactArgs(args) {
+  return args.map((a, i) => (args[i - 1] === "--api-key" ? "***REDACTED***" : a));
+}
 const claudeProjectKey = (absDir) => absDir.replace(/[^a-zA-Z0-9]/g, "-");
 
 function linkSkillInto(skillsDir, skillName) {
@@ -291,7 +297,7 @@ async function runOne(agent, task) {
   const { runDir, cwd } = setupRunDir(agent, task);
   const spec = RUNNERS[agent](task, { cwd, model: aCfg.model, timeoutSec: aCfg.timeoutSec });
   console.log(`\n▶ ${agent} :: ${task.task_id}`);
-  console.log(`  $ ${spec.cmd} ${spec.args.map((a) => (a.includes(" ") ? JSON.stringify(a) : a)).join(" ")}`);
+  console.log(`  $ ${spec.cmd} ${redactArgs(spec.args).map((a) => (a.includes(" ") ? JSON.stringify(a) : a)).join(" ")}`);
   const startMs = Date.now();
   const r = await run(spec.cmd, spec.args, { cwd: spec.cwd, timeoutSec: spec.timeoutSec });
   writeFileSync(join(runDir, "stdout.txt"), r.stdout);
@@ -315,7 +321,7 @@ async function runOne(agent, task) {
 
   const meta = {
     agent, task_id: task.task_id, skill: task.skill, deps: task.deps,
-    cmd: spec.cmd, args: spec.args, model: aCfg.model,
+    cmd: spec.cmd, args: redactArgs(spec.args), model: aCfg.model,
     exit_code: r.code, signal: r.signal, timed_out: !!r.timedOut, duration_ms: r.ms,
     cwd, transcript_bytes: tText.length, skill_signal: skillSignal,
     stdout_bytes: r.stdout.length, stderr_bytes: r.stderr.length,
