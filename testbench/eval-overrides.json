@@ -14,5 +14,21 @@
       "Each quote object includes the quote text, its author, and its tags (field names may vary)",
       "Stops any browser session that was started"
     ]
+  },
+  "steel-session-debugging__e1": {
+    "_reason": "Source prompt debugs a fake id (sess_123) so nothing can actually be inspected — it only tests what the agent SAYS. The {{session_id}} token is replaced at run time with a real failed session seeded by seed/seed-session.mjs (a rejected login on the-internet.herokuapp.com), giving the agent real logs/traces/network forensics to diagnose. Assertions are session-agnostic, so only the prompt is templated.",
+    "prompt": "Debug why Steel session {{session_id}} failed after the login step."
+  },
+  "steel-reliability__e1": {
+    "_reason": "Reuse the same real seeded session ({{session_id}}) instead of a hypothetical 403. Login reliability is explicitly in this skill's boundary, so a rejected-credentials failure is in scope. The first source assertion demanded 403/verify-human copy specifically; reword it to identify the real failure from evidence so the skill is judged on its actual job (preserve evidence, least-invasive fix, verify) against real data.",
+    "prompt": "My Steel automation keeps failing at the login step (session {{session_id}}). Plan the least invasive fix, and include a verification rerun.",
+    "assertions": [
+      "Inspects the session evidence to identify the actual failure rather than guessing a cause",
+      "Preserves evidence before changing configuration",
+      "Checks Steel feature access before paid proxy or CAPTCHA options",
+      "Starts with least invasive mitigations",
+      "Does not promise guaranteed bypass",
+      "Includes a verification rerun"
+    ]
   }
 }

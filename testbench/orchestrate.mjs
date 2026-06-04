@@ -63,7 +63,39 @@ const flag = (name) => argv.includes(`--${name}`);
 const onlyAgent = opt("agent");
 const onlyTask = opt("task");
 const noJudge = flag("no-judge");
+const noSeed = flag("no-seed"); // skip seeding even if a selected task consumes the fixture
 const rejudgeDir = opt("rejudge"); // path to an existing run dir; re-runs only the judge
+
+// ---- fixtures (real seeded session shared by the chain) -------------------
+const fixturesPath = join(here, "runs", "_fixtures.json");
+const loadFixtures = () => (existsSync(fixturesPath) ? JSON.parse(readFileSync(fixturesPath, "utf8")) : {});
+let fixtures = loadFixtures();
+
+// Replace {{session_id}} (and any future {{token}}) in a task's prompt/assertions/expected_output
+// with the real seeded value. Throws if a token is present but the fixture is missing — running a
+// fixture-consuming task against a literal "{{session_id}}" would be a silent false failure.
+function resolveTask(task) {
+  const subst = (s) => String(s).replace(/\{\{(\w+)\}\}/g, (m, key) => {
+    const v = fixtures[key];
+    if (v == null) throw new Error(`task ${task.task_id} needs fixture "${key}" but it is missing — seed first (run without --no-seed)`);
+    return v;
+  });
+  return {
+    ...task,
+    prompt: subst(task.prompt),
+    expected_output: task.expected_output ? subst(task.expected_output) : task.expected_output,
+    assertions: (task.assertions || []).map(subst),
+  };
+}
+
+// Produce the shared fixture session by running the committed seed CLI. Synchronous + fail-fast:
+// a broken seed must abort the matrix rather than let every consumer false-fail.
+function runSeed() {
+  console.log("\n● seeding shared fixture session (seed/seed-session.mjs)");
+  execFileSync(process.execPath, [join(here, "seed", "seed-session.mjs")], { stdio: "inherit" });
+  fixtures = loadFixtures();
+  if (!fixtures.session_id) throw new Error("seed completed but runs/_fixtures.json has no session_id");
+}
 
 // ---- helpers --------------------------------------------------------------
 const ts = () => new Date().toISOString().replace(/[:.]/g, "-");
@@ -343,6 +375,8 @@ function transcriptText(runDir) {
 
 async function runOne(agent, task) {
   const aCfg = config.agents[agent];
+  // Substitute the real seeded session id before anything reads the prompt/assertions.
+  task = resolveTask(task);
   const { runDir, cwd } = setupRunDir(agent, task);
   const spec = RUNNERS[agent](task, { cwd, model: aCfg.model, timeoutSec: aCfg.timeoutSec });
   console.log(`\n▶ ${agent} :: ${task.task_id}`);
@@ -376,6 +410,10 @@ async function runOne(agent, task) {
 
   const meta = {
     agent, task_id: task.task_id, skill: task.skill, deps: task.deps,
+    // Resolved (post-substitution) prompt/assertions actually shown to the agent — so --rejudge
+    // scores against what really ran, not the un-substituted {{session_id}} token in tasks.json.
+    prompt: task.prompt, assertions: task.assertions, expected_output: task.expected_output,
+    ...(task.requires_fixture ? { fixture_session_id: fixtures.session_id } : {}),
     cmd: spec.cmd, args: redactArgs(spec.args), model: aCfg.model,
     exit_code: r.code, signal: r.signal, timed_out: !!r.timedOut, duration_ms: r.ms,
     started_at: new Date(startMs).toISOString(), ended_at: new Date(endMs).toISOString(),
@@ -402,8 +440,16 @@ async function runOne(agent, task) {
 if (rejudgeDir) {
   const runDir = resolve(rejudgeDir);
   const meta = JSON.parse(readFileSync(join(runDir, "meta.json"), "utf8"));
-  const task = tasksDoc.tasks.find((t) => t.task_id === meta.task_id);
-  if (!task) throw new Error(`task ${meta.task_id} not found in tasks.json`);
+  const base = tasksDoc.tasks.find((t) => t.task_id === meta.task_id);
+  if (!base) throw new Error(`task ${meta.task_id} not found in tasks.json`);
+  // Prefer the resolved prompt/assertions stored in meta (the exact text the agent saw); older runs
+  // predate that field, so fall back to the tasks.json definition.
+  const task = {
+    ...base,
+    prompt: meta.prompt ?? base.prompt,
+    assertions: meta.assertions ?? base.assertions,
+    expected_output: meta.expected_output ?? base.expected_output,
+  };
   const tText = transcriptText(runDir);
   const skillSignal = meta.skill_signal || detectSkillSignal(tText, task);
   console.log(`▶ rejudge ${meta.agent} :: ${meta.task_id} (transcript ${tText.length}b)`);
@@ -411,6 +457,17 @@ if (rejudgeDir) {
   writeFileSync(join(runDir, "verdict.json"), JSON.stringify(verdict, null, 2));
   console.log(`  verdict: ${verdict?.overall ?? "?"}  skill_loaded=${verdict?.skill_loaded ?? "?"}`);
   process.exit(0);
+}
+
+// Seed the shared fixture session up front if any selected task consumes it. Done once before the
+// matrix (sequential runs share one real failed session), so no per-task ordering is required.
+const selectedTasks = tasksDoc.tasks.filter((t) => !onlyTask || t.task_id === onlyTask);
+const needsFixture = selectedTasks.some((t) => t.requires_fixture);
+if (needsFixture && !noSeed) {
+  runSeed();
+} else if (needsFixture && noSeed) {
+  if (!fixtures.session_id) throw new Error("--no-seed set but runs/_fixtures.json has no session_id; seed once or drop --no-seed");
+  console.log(`\n● reusing existing fixture session ${fixtures.session_id} (--no-seed)`);
 }
 
 const results = [];
