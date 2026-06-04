@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Official agent skills for Steel cloud browsers: live web automation, SDK development, session debugging, reliability, and skill authoring.",
-    "version": "2026.06.02"
+    "version": "2026.06.04"
   },
   "plugins": [
     {
@@ -96,6 +96,21 @@
         "browser-actions"
       ],
       "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-skill-creator"
+    },
+    {
+      "name": "steel-recording",
+      "source": "./steel-recording",
+      "description": "Fetches a Steel browser session's screen recording and saves it as a local MP4 by downloading the HLS playlist and segments and muxing them with ffmpeg.",
+      "version": "0.1.0",
+      "category": "operate",
+      "license": "MIT",
+      "keywords": [
+        "steel",
+        "sessions",
+        "recordings",
+        "replay"
+      ],
+      "homepage": "https://docs.steel.dev/overview/skills/available-skills/steel-recording"
     }
   ]
 }

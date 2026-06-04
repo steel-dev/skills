@@ -18,6 +18,7 @@ npx skills add steel-dev/skills --skill steel-developer
 npx skills add steel-dev/skills --skill steel-session-debugging
 npx skills add steel-dev/skills --skill steel-reliability
 npx skills add steel-dev/skills --skill steel-skill-creator
+npx skills add steel-dev/skills --skill steel-recording
 ```
 
 Install for a specific agent:
@@ -35,6 +36,7 @@ npx skills add steel-dev/skills --skill steel-browser -a claude-code -g
 | `steel-session-debugging` | The agent should diagnose a failed Steel session from logs, traces, and replay evidence.        |
 | `steel-reliability`       | The agent should diagnose bot-detection, CAPTCHA, proxy, identity, or login reliability issues. |
 | `steel-skill-creator`     | The agent should turn a repeated browser task into a reusable skill.                            |
+| `steel-recording`         | The agent should download a Steel session's screen recording as an MP4.                         |
 
 ## Which skill should I use?
 
@@ -43,6 +45,7 @@ npx skills add steel-dev/skills --skill steel-browser -a claude-code -g
 - Use `steel-session-debugging` when a session failed and you need evidence-backed diagnosis.
 - Use `steel-reliability` when the evidence points to bot detection, CAPTCHA, proxies, profiles, credentials, pacing, or login reliability.
 - Use `steel-skill-creator` to turn a recurring browser workflow into a new skill.
+- Use `steel-recording` to download a session's screen recording as a local MP4.
 
 ## Metadata
 

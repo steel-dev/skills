@@ -1,0 +1,40 @@
+{
+  "skill_name": "steel-recording",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Fetch the recording for Steel session sess_123 and save it as run.mp4.",
+      "expected_output": "The agent runs the bundled fetch-recording.sh with the session ID and output path, then reports the saved path, size, and duration.",
+      "files": [],
+      "assertions": [
+        "Uses the provided Steel session ID",
+        "Runs scripts/fetch-recording.sh rather than hand-rolling ffmpeg streaming from the remote playlist",
+        "Reports where the MP4 was saved",
+        "Confirms the recording is complete (duration verified) before declaring success"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I pasted a session ID earlier — grab the MP4 of that session.",
+      "expected_output": "The agent recognizes this as a recording-download request, uses the session ID, and fetches the MP4 without re-encoding.",
+      "files": [],
+      "assertions": [
+        "Activates steel-recording for a download-the-video request",
+        "Resolves the Steel API key from STEEL_API_KEY or the steel CLI config",
+        "Does not upload or share the recording anywhere unless asked",
+        "Mentions that recordings are headful-only and that presigned URLs expire if relevant"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Steel session sess_456 failed after the login step — tell me why it broke.",
+      "expected_output": "The agent should not use steel-recording, because this is a failure diagnosis task, not a request to download the video.",
+      "files": [],
+      "assertions": [
+        "Does not activate steel-recording as the primary skill",
+        "Routes failure diagnosis to steel-session-debugging",
+        "Does not download an MP4 as the answer to a why-did-it-fail question"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "version": "2026.06.02",
+  "version": "2026.06.04",
   "schema": 1,
   "default_branch": "main",
   "skills": {
@@ -112,6 +112,26 @@
       },
       "requires": ["steel-cli", "steel-browser"],
       "platform_features": ["sessions", "agent-traces", "browser-actions"]
+    },
+    "steel-recording": {
+      "title": "Steel Recording",
+      "description": "Fetches a Steel browser session's screen recording and saves it as a local MP4 by downloading the HLS playlist and segments and muxing them with ffmpeg.",
+      "category": "operate",
+      "stage": "beta",
+      "path": "steel-recording",
+      "version": "0.1.0",
+      "owner": "Niko",
+      "cli": {
+        "include": true
+      },
+      "agents": ["claude-code", "cursor", "codex", "opencode", "pi"],
+      "docs_url": "https://docs.steel.dev/overview/skills/available-skills/steel-recording",
+      "install": {
+        "skills_cli": "npx skills add steel-dev/skills --skill steel-recording",
+        "steel_cli": "steel skills install steel-recording"
+      },
+      "requires": ["steel-cli"],
+      "platform_features": ["sessions", "recordings", "replay"]
     }
   }
 }
