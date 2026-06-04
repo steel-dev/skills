@@ -17,6 +17,7 @@ const HOME = homedir();
 
 const config = JSON.parse(readFileSync(join(here, "config.json"), "utf8"));
 const tasksDoc = JSON.parse(readFileSync(join(here, "tasks.json"), "utf8"));
+const manifest = JSON.parse(readFileSync(join(repoRoot, "manifest.json"), "utf8"));
 
 // Load testbench/.env (KEY=VALUE) into process.env without overwriting existing values.
 function loadDotenv() {
@@ -73,8 +74,13 @@ function redactArgs(args) {
 }
 const claudeProjectKey = (absDir) => absDir.replace(/[^a-zA-Z0-9]/g, "-");
 
-function linkSkillInto(skillsDir, skillName) {
-  const skillPath = join(repoRoot, skillName); // path == skill name for our manifest
+function skillPathFor(skillName, task) {
+  if (skillName === task.skill && task.skill_path) return task.skill_path;
+  return manifest.skills?.[skillName]?.path ?? skillName;
+}
+
+function linkSkillInto(skillsDir, skillName, task) {
+  const skillPath = join(repoRoot, skillPathFor(skillName, task));
   if (!existsSync(skillPath)) throw new Error(`skill folder missing: ${skillPath}`);
   mkdirSync(skillsDir, { recursive: true });
   const dest = join(skillsDir, skillName);
@@ -94,8 +100,8 @@ function setupRunDir(agent, task) {
   const agentsSkills = join(cwd, ".agents", "skills");
   const names = [task.skill, ...task.deps];
   for (const n of names) {
-    linkSkillInto(claudeSkills, n);
-    linkSkillInto(agentsSkills, n);
+    linkSkillInto(claudeSkills, n, task);
+    linkSkillInto(agentsSkills, n, task);
   }
   writeFileSync(join(runDir, "prompt.txt"), task.prompt + "\n");
   return { runDir, cwd };
@@ -221,6 +227,21 @@ function detectSkillSignal(text, task) {
   return { loaded: false, evidence: "no skill path/name reference found" };
 }
 
+function transcriptExcerpt(text) {
+  const max = 120000;
+  if (text.length <= max) return { text, note: "full transcript" };
+  const headLen = 40000;
+  const tailLen = max - headLen;
+  return {
+    text: [
+      text.slice(0, headLen),
+      `\n\n[... omitted ${text.length - max} chars from middle of transcript ...]\n\n`,
+      text.slice(-tailLen),
+    ].join(""),
+    note: `head ${headLen} chars + tail ${tailLen} chars; middle omitted`,
+  };
+}
+
 // ---- judge ----------------------------------------------------------------
 function listOutputFiles(cwd) {
   const skip = new Set([".claude", ".agents", ".opencode", ".pi", ".pi-session"]);
@@ -274,7 +295,7 @@ function normalizeVerdict(v) {
   return v;
 }
 
-async function judge(task, agent, runDir, cwd, transcriptText) {
+async function judge(task, agent, runDir, cwd, transcriptText, skillSignal) {
   const files = listOutputFiles(cwd);
   const filePreviews = files.slice(0, 12).map((f) => {
     let head = "";
@@ -283,8 +304,7 @@ async function judge(task, agent, runDir, cwd, transcriptText) {
   }).join("\n\n");
   const schema = readFileSync(join(here, "judge", "judge.schema.json"), "utf8");
   const instructions = readFileSync(join(here, "judge", "judge.md"), "utf8");
-  // Cap transcript size for the judge prompt.
-  const tail = transcriptText.length > 120000 ? transcriptText.slice(-120000) : transcriptText;
+  const excerpt = transcriptExcerpt(transcriptText);
   const prompt = [
     instructions,
     `\n# OUTPUT CONTRACT\nReturn ONLY a single JSON object (no prose, no markdown fences) that validates against this JSON Schema:\n${schema}`,
@@ -293,9 +313,10 @@ async function judge(task, agent, runDir, cwd, transcriptText) {
     `\n# EXPECTED OUTPUT (informational)\n${task.expected_output}`,
     `\n# ASSERTIONS (judge each)\n${task.assertions.map((a, i) => `${i + 1}. ${a}`).join("\n")}`,
     `\n# SKILL UNDER TEST\n${task.skill} (deps: ${task.deps.join(", ") || "none"})`,
+    `\n# NON-LLM SKILL-LOAD SIGNAL\nloaded=${skillSignal?.loaded ?? "unknown"}; evidence=${skillSignal?.evidence ?? "none"}\nUse this only as a hint; base the final skill_loaded verdict on the transcript and artifacts.`,
     `\n# FILES CREATED IN WORKING DIR\n${files.map((f) => `${f.path} (${f.bytes}b)`).join("\n") || "(none)"}`,
     `\n# FILE PREVIEWS\n${filePreviews || "(none)"}`,
-    `\n# AGENT TRANSCRIPT (may be truncated to last 120k chars)\n${tail}`,
+    `\n# AGENT TRANSCRIPT (${excerpt.note}; capped at 120k chars)\n${excerpt.text}`,
   ].join("\n");
   writeFileSync(join(runDir, "judge-prompt.txt"), prompt);
 
@@ -365,7 +386,7 @@ async function runOne(agent, task) {
   if (!noJudge) {
     if (!tText) { console.log("  ! no transcript captured — skipping judge"); }
     else {
-      verdict = await judge(task, agent, runDir, cwd, tText);
+      verdict = await judge(task, agent, runDir, cwd, tText, skillSignal);
       writeFileSync(join(runDir, "verdict.json"), JSON.stringify(verdict, null, 2));
       console.log(`  verdict: ${verdict?.overall ?? "?"}  skill_loaded=${verdict?.skill_loaded ?? "?"}`);
     }
@@ -380,8 +401,9 @@ if (rejudgeDir) {
   const task = tasksDoc.tasks.find((t) => t.task_id === meta.task_id);
   if (!task) throw new Error(`task ${meta.task_id} not found in tasks.json`);
   const tText = transcriptText(runDir);
+  const skillSignal = meta.skill_signal || detectSkillSignal(tText, task);
   console.log(`▶ rejudge ${meta.agent} :: ${meta.task_id} (transcript ${tText.length}b)`);
-  const verdict = await judge(task, meta.agent, runDir, meta.cwd, tText);
+  const verdict = await judge(task, meta.agent, runDir, meta.cwd, tText, skillSignal);
   writeFileSync(join(runDir, "verdict.json"), JSON.stringify(verdict, null, 2));
   console.log(`  verdict: ${verdict?.overall ?? "?"}  skill_loaded=${verdict?.skill_loaded ?? "?"}`);
   process.exit(0);
