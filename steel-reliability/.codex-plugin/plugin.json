@@ -1,0 +1,16 @@
+{
+  "name": "steel-reliability",
+  "version": "0.1.0",
+  "description": "Skill for diagnosing and mitigating Steel automation reliability issues including bot detection, CAPTCHA loops, proxy failures, persistent identity problems, login state, pacing, and retry strategy.",
+  "license": "MIT",
+  "homepage": "https://docs.steel.dev/overview/agent-skills/steel-reliability",
+  "keywords": [
+    "steel",
+    "sessions",
+    "proxies",
+    "captchas",
+    "profiles",
+    "credentials"
+  ],
+  "skills": "./"
+}

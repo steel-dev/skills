@@ -1,0 +1,14 @@
+{
+  "name": "steel-skill-creator",
+  "version": "0.1.0",
+  "description": "Compiles a recurring web task into a reusable, parameterized agent skill by driving the task twice in a Steel browser, capturing parameterization-quality traces, then authoring and verifying a skill from them.",
+  "license": "MIT",
+  "homepage": "https://docs.steel.dev/overview/agent-skills/steel-skill-creator",
+  "keywords": [
+    "steel",
+    "sessions",
+    "agent-traces",
+    "browser-actions"
+  ],
+  "skills": "./"
+}

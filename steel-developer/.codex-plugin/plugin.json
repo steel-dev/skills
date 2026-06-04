@@ -1,0 +1,20 @@
+{
+  "name": "steel-developer",
+  "version": "0.1.0",
+  "description": "Skill for building reusable software on Steel cloud browsers with SDKs, REST APIs, Playwright, Puppeteer, Stagehand, Browser Use, credentials, profiles, files, extensions, embeds, computer-use APIs, and implementation-safe handoffs to debugging and reliability skills.",
+  "license": "MIT",
+  "homepage": "https://docs.steel.dev/overview/agent-skills/steel-developer",
+  "keywords": [
+    "steel",
+    "sdk",
+    "sessions",
+    "browser-actions",
+    "credentials",
+    "profiles",
+    "proxies",
+    "captchas",
+    "files",
+    "extensions"
+  ],
+  "skills": "./"
+}

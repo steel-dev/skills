@@ -1,0 +1,16 @@
+{
+  "name": "steel-browser",
+  "version": "0.1.0",
+  "description": "Skill for agent-driven web workflows using Steel cloud browsers and API tools.",
+  "license": "MIT",
+  "homepage": "https://docs.steel.dev/overview/agent-skills/steel-browser",
+  "keywords": [
+    "steel",
+    "browser-actions",
+    "sessions",
+    "captchas",
+    "credentials",
+    "profiles"
+  ],
+  "skills": "./"
+}
