@@ -1,0 +1,16 @@
+{
+  "name": "steel-session-debugging",
+  "version": "0.1.0",
+  "description": "Skill for diagnosing failed Steel browser sessions from session metadata, browser logs, raw agent logs, semantic agent traces, replay artifacts, network failures, screenshots, and errors.",
+  "license": "MIT",
+  "homepage": "https://docs.steel.dev/overview/agent-skills/steel-session-debugging",
+  "keywords": [
+    "steel",
+    "sessions",
+    "browser-logs",
+    "agent-logs",
+    "agent-traces",
+    "replay"
+  ],
+  "skills": "./"
+}

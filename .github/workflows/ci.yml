@@ -18,5 +18,7 @@ jobs:
         run: node scripts/validate-skills.mjs
       - name: Check marketplace.json is in sync with manifest
         run: node scripts/generate-marketplace.mjs --check
+      - name: Check Codex plugin artifacts are in sync with manifest
+        run: node scripts/generate-codex.mjs --check
       - name: Smoke test skills installer
         run: npx skills add . --list
