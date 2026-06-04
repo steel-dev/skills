@@ -14,14 +14,18 @@ finding (we've already seen it).
 For every `(agent, task)` pair:
 
 1. **Isolate** — a fresh working dir is created under `runs/<agent>/<task>/<ts>/cwd/`, and the
-   skill (plus its manifest `requires` skill-deps) is symlinked into both:
+   skill (plus its manifest `requires` skill-deps) is **copied** into both:
    - `cwd/.claude/skills/<skill>` — read by claude
    - `cwd/.agents/skills/<skill>` — read by codex, opencode, and pi (the shared standard dir)
 
-   Containment is enforced two ways so agents can't escape to the repo root: each `cwd/` is
-   `git init`'d (agents that detect their workspace via the nearest `.git` stop there), and the
+   Containment is enforced three ways so agents can't escape to the repo root: each `cwd/` is
+   `git init`'d (agents that detect their workspace via the nearest `.git` stop there), the
    child's `PWD` is set to `cwd/` (opencode resolves both its workspace **and** its skill
-   discovery from `$PWD`, not `getcwd()`).
+   discovery from `$PWD`, not `getcwd()`), and skills are **copied rather than symlinked** — a
+   symlink resolves to the real repo skill dir, so a skill whose scripts write cwd-relative
+   output (e.g. `steel-session-debugging`'s `.steel-debug/`) would escape the jail and pollute
+   the repo when an agent runs them from the skill dir; a real copy keeps those writes inside
+   `cwd/`.
 2. **Run** — the agent is launched headlessly in that dir with the eval prompt. Each run is
    wrapped in a timeout and spawned in its own process group (so lingering sandbox helpers get
    reaped). stdin is closed so agents don't block waiting on it.
@@ -125,7 +129,7 @@ the script, not the shell cwd.
 `tasks.json` is generated from each skill's `evals/evals.json` and `manifest.json`:
 
 - one eval per skill (`smokeEvalId`),
-- skill `requires` resolved transitively to symlinkable deps (the non-skill `steel-cli` dep is
+- skill `requires` resolved transitively to copyable deps (the non-skill `steel-cli` dep is
   dropped),
 - agents filtered to each skill's declared `compatibility` (e.g. `steel-skill-creator` is
   claude-only).
@@ -190,6 +194,7 @@ path / name?) used as a hint; the judge's `skill_loaded` is the authoritative ca
 ## Known caveats
 
 - Live runs hit the real web + Steel cloud and cost usage; they are subject to site flakiness.
-- Write isolation is enforced via per-run `git init` + `PWD` (see the pipeline above). If you add
-  an agent, re-verify it writes only inside `cwd/` and discovers skills from the run dir.
+- Write isolation is enforced via per-run `git init` + `PWD` + copied (not symlinked) skills (see
+  the pipeline above). If you add an agent, re-verify it writes only inside `cwd/` and discovers
+  skills from the run dir.
 - Transcript shapes differ per agent; the judge is written to adapt across them.
