@@ -3,7 +3,7 @@
 
 import { spawn, execFileSync } from "node:child_process";
 import {
-  existsSync, mkdirSync, readFileSync, writeFileSync, symlinkSync, copyFileSync, readdirSync, statSync,
+  existsSync, mkdirSync, readFileSync, writeFileSync, cpSync, copyFileSync, readdirSync, statSync,
 } from "node:fs";
 import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -79,12 +79,16 @@ function skillPathFor(skillName, task) {
   return manifest.skills?.[skillName]?.path ?? skillName;
 }
 
-function linkSkillInto(skillsDir, skillName, task) {
+function copySkillInto(skillsDir, skillName, task) {
   const skillPath = join(repoRoot, skillPathFor(skillName, task));
   if (!existsSync(skillPath)) throw new Error(`skill folder missing: ${skillPath}`);
   mkdirSync(skillsDir, { recursive: true });
   const dest = join(skillsDir, skillName);
-  if (!existsSync(dest)) symlinkSync(skillPath, dest, "dir");
+  // Copy (not symlink) the skill tree into cwd. A symlink resolves to the real repo skill dir,
+  // so a skill whose scripts write cwd-relative output (e.g. steel-session-debugging's
+  // `.steel-debug/`) escapes the git-init jail and pollutes the repo when an agent runs them
+  // from the skill dir. A real copy keeps every such write inside cwd. Skills are tiny (<128K).
+  if (!existsSync(dest)) cpSync(skillPath, dest, { recursive: true });
 }
 
 function setupRunDir(agent, task) {
@@ -100,8 +104,8 @@ function setupRunDir(agent, task) {
   const agentsSkills = join(cwd, ".agents", "skills");
   const names = [task.skill, ...task.deps];
   for (const n of names) {
-    linkSkillInto(claudeSkills, n, task);
-    linkSkillInto(agentsSkills, n, task);
+    copySkillInto(claudeSkills, n, task);
+    copySkillInto(agentsSkills, n, task);
   }
   writeFileSync(join(runDir, "prompt.txt"), task.prompt + "\n");
   return { runDir, cwd };
