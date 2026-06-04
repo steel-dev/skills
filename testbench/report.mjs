@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { extractUsage } from "./usage.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const runsRoot = join(here, "runs");
@@ -16,6 +17,9 @@ const TASKS = tasksDoc.tasks;
 const VERDICT_GLYPH = { pass: "✅", partial: "🟡", fail: "❌" };
 
 function readJSON(p) { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; } }
+function readText(p) { try { return readFileSync(p, "utf8"); } catch { return ""; } }
+function fmtCost(c) { return typeof c === "number" ? `$${c.toFixed(4)}` : "—"; }
+function fmtTok(u) { return (u && (u.input != null || u.output != null)) ? `${((u.input || 0) + (u.output || 0)).toLocaleString()}` : "—"; }
 
 // Newest run dir for an (agent, task): runs/<agent>/<task>/<ts>/
 function newestRun(agent, taskId) {
@@ -33,6 +37,12 @@ function cellFor(agent, task) {
   if (!runDir) return { text: "·", run: null };
   const meta = readJSON(join(runDir, "meta.json")) || {};
   const verdict = readJSON(join(runDir, "verdict.json"));
+  // Use meta.usage when present (newer runs); otherwise recompute from the stored transcript.
+  const agentName = meta.agent || agent;
+  const usage = meta.usage || extractUsage(agentName, {
+    stdout: readText(join(runDir, "stdout.txt")),
+    transcript: readText(join(runDir, "transcript.jsonl")),
+  });
   const a = Array.isArray(verdict?.assertions) ? verdict.assertions : [];
   const pass = a.filter((x) => x.verdict === "pass").length;
   const skill = verdict?.skill_loaded === true ? "🧩" : verdict?.skill_loaded === false ? "🚫" : "❔";
@@ -40,7 +50,7 @@ function cellFor(agent, task) {
   const glyph = VERDICT_GLYPH[ov] || (verdict?.error ? "⚠️parse" : "❔");
   const flags = `${meta.timed_out ? " ⏱" : ""}${verdict?.overall_derived ? " ᵈ" : ""}`;
   const text = verdict ? `${glyph} ${skill} ${pass}/${a.length}${flags}` : "⚠️norun";
-  return { text, run: { runDir, meta, verdict, pass, total: a.length, ov } };
+  return { text, run: { runDir, meta, verdict, pass, total: a.length, ov, usage } };
 }
 
 // Build grid
@@ -71,10 +81,10 @@ L.push("");
 
 // Per-agent rollup
 L.push("## Per-agent rollup", "");
-L.push("| Agent | pass | partial | fail | skill-load rate | runs |");
-L.push("|---|---|---|---|---|---|");
+L.push("| Agent | pass | partial | fail | skill-load rate | runs | total cost | total tokens |");
+L.push("|---|---|---|---|---|---|---|---|");
 for (const agent of AGENTS) {
-  let pass = 0, partial = 0, fail = 0, loaded = 0, runs = 0;
+  let pass = 0, partial = 0, fail = 0, loaded = 0, runs = 0, cost = 0, costKnown = false, tokens = 0;
   for (const task of TASKS) {
     const c = grid[task.task_id][agent];
     if (!c.run) continue;
@@ -83,9 +93,28 @@ for (const agent of AGENTS) {
     else if (c.run.ov === "partial") partial++;
     else if (c.run.ov === "fail") fail++;
     if (c.run.verdict?.skill_loaded === true) loaded++;
+    const u = c.run.usage || {};
+    if (typeof u.cost_usd === "number") { cost += u.cost_usd; costKnown = true; }
+    tokens += (u.input || 0) + (u.output || 0);
   }
   const rate = runs ? `${loaded}/${runs}` : "—";
-  L.push(`| ${agent} | ${pass} | ${partial} | ${fail} | ${rate} | ${runs} |`);
+  L.push(`| ${agent} | ${pass} | ${partial} | ${fail} | ${rate} | ${runs} | ${costKnown ? fmtCost(cost) : "—"} | ${tokens ? tokens.toLocaleString() : "—"} |`);
+}
+L.push("");
+L.push("_Cost note: codex/claude run on team plans — claude reports a list-price `total_cost_usd`; codex reports tokens only (no per-call cost)._", "");
+
+// Cost & tokens matrix
+L.push("## Cost & tokens (per run)", "");
+L.push(`| Skill / task | ${AGENTS.join(" | ")} |`);
+L.push(`|---|${AGENTS.map(() => "---").join("|")}|`);
+for (const task of TASKS) {
+  const row = AGENTS.map((ag) => {
+    const c = grid[task.task_id][ag];
+    if (!c.run) return task.agents.includes(ag) ? "·" : "—";
+    const u = c.run.usage || {};
+    return `${fmtCost(u.cost_usd)} · ${fmtTok(u)}t`;
+  });
+  L.push(`| \`${task.task_id}\` | ${row.join(" | ")} |`);
 }
 L.push("");
 
@@ -102,7 +131,8 @@ for (const task of TASKS) {
     }
     const v = c.run.verdict || {};
     const dur = c.run.meta?.duration_ms ? `${Math.round(c.run.meta.duration_ms / 1000)}s` : "?";
-    const head = `- **${agent}** — ${VERDICT_GLYPH[c.run.ov] || "❔"} ${c.run.ov ?? "?"} · skill ${v.skill_loaded === true ? "loaded" : v.skill_loaded === false ? "NOT loaded" : "?"} · ${c.run.pass}/${c.run.total} assertions · ${dur}`;
+    const u = c.run.usage || {};
+    const head = `- **${agent}** — ${VERDICT_GLYPH[c.run.ov] || "❔"} ${c.run.ov ?? "?"} · skill ${v.skill_loaded === true ? "loaded" : v.skill_loaded === false ? "NOT loaded" : "?"} · ${c.run.pass}/${c.run.total} assertions · ${dur} · ${fmtCost(u.cost_usd)} · ${fmtTok(u)}t`;
     L.push(head);
     if (v.summary) L.push(`  - ${v.summary}`);
     const failed = (v.assertions || []).filter((x) => x.verdict !== "pass");

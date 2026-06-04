@@ -8,6 +8,7 @@ import {
 import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
+import { extractUsage } from "./usage.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -340,12 +341,13 @@ async function runOne(agent, task) {
   }
   const tText = transcriptText(runDir);
   const skillSignal = detectSkillSignal(tText + "\n" + r.stdout, task);
+  const usage = extractUsage(agent, { stdout: r.stdout, transcript: tText });
 
   const meta = {
     agent, task_id: task.task_id, skill: task.skill, deps: task.deps,
     cmd: spec.cmd, args: redactArgs(spec.args), model: aCfg.model,
     exit_code: r.code, signal: r.signal, timed_out: !!r.timedOut, duration_ms: r.ms,
-    cwd, transcript_bytes: tText.length, skill_signal: skillSignal,
+    cwd, transcript_bytes: tText.length, skill_signal: skillSignal, usage,
     stdout_bytes: r.stdout.length, stderr_bytes: r.stderr.length,
   };
   writeFileSync(join(runDir, "meta.json"), JSON.stringify(meta, null, 2));

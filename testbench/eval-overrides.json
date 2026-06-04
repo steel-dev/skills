@@ -1,0 +1,18 @@
+{
+  "_comment": "ABOUTME: Testbench-local overrides for source evals (skills/evals.json are NOT modified). ABOUTME: gen-tasks.mjs merges these by task_id; keys starting with _ are ignored.",
+  "steel-skill-creator__e1": {
+    "_reason": "Source eval uses placeholder URL https://example.com/widget with no real product/price/params, so a correct agent stalls asking for a real target and can never record traces. Swap in a real, scrapable product site (books.toscrape.com) with concrete changed inputs.",
+    "prompt": "Turn my recurring book price lookup into a reusable skill. The task: given a book product page URL, record its title, price, and availability. Example (first recording): https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html . For the second recording use a different book: https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html .",
+    "expected_output": "The agent records two read-only Steel runs against the two book URLs, compares the traces to find the product-URL parameter and the stable title/price/availability selectors, scaffolds a generated skill with frontmatter and evals, and verifies it with a third book URL."
+  },
+  "steel-browser__e1": {
+    "_reason": "Source assertion 'Includes text, author, and tags fields' demands a field literally named 'text', but the prompt only says 'with authors and tags' — penalizing agents that name the field 'quote'. Reword to test structure, not exact key names.",
+    "assertions": [
+      "Uses a steel command rather than curl, fetch, or wget",
+      "Starts with steel scrape when page content is enough",
+      "Creates quotes.json containing valid JSON",
+      "Each quote object includes the quote text, its author, and its tags (field names may vary)",
+      "Stops any browser session that was started"
+    ]
+  }
+}
