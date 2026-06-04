@@ -38,8 +38,11 @@ For every `(agent, task)` pair:
 testbench/
   config.json            # per-agent model, timeout, command resolution + judge config
   gen-tasks.mjs          # builds tasks.json from each skill's evals/evals.json + manifest.json
+  eval-overrides.json    # testbench-local eval fixes merged by task_id (skills are NOT edited)
   tasks.json             # generated; one "smoke" eval per skill (gitignored)
   orchestrate.mjs        # the runner: setup -> run -> capture -> judge -> record
+  usage.mjs              # extracts token usage + USD cost from each agent's transcript
+  report.mjs             # renders REPORT.md (matrix, rollups, cost/tokens, run detail)
   judge/
     judge.md             # judge instructions
     judge.schema.json    # verdict shape (skill_loaded, assertions[], task_succeeded, overall, …)
@@ -117,6 +120,25 @@ the script, not the shell cwd.
   dropped),
 - agents filtered to each skill's declared `compatibility` (e.g. `steel-skill-creator` is
   claude-only).
+
+## Eval overrides (skills are never modified)
+
+Source evals live in each skill's `evals/evals.json` (outside `testbench/`). To fix an eval for
+testing without touching the skills, add an entry to `eval-overrides.json` keyed by `task_id`;
+`gen-tasks.mjs` merges `prompt` / `assertions` / `expected_output` over the source eval. Keys
+starting with `_` (e.g. `_reason`) are ignored, and overridden tasks are flagged `overridden` in
+`tasks.json`. Current overrides fix two eval-design bugs: a placeholder URL in
+`steel-skill-creator` that made the task unrunnable, and a `steel-browser` assertion that demanded
+a field literally named `text` when the prompt only asked for "authors and tags".
+
+## Cost & tokens
+
+`usage.mjs` pulls per-run token counts and USD cost from each agent's output:
+`claude` reports `total_cost_usd` + usage; `opencode` and `pi` report per-step/per-message cost;
+`codex` reports tokens only (team plan, no per-call cost). `report.mjs` adds a per-agent rollup,
+a per-run cost/token matrix, and cost in the run detail. Note: agents that **install globally by
+design** (e.g. `steel-skill-creator` writes to `~/.agents/skills`) escape the per-run `cwd`
+containment — that's inherent to what the skill does, not a harness leak.
 
 ## Judge & verdict
 
