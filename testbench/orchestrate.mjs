@@ -406,7 +406,10 @@ async function judge(task, agent, runDir, cwd, transcriptText, skillSignal, devE
         : `not run: ${devExec.reason}`
     }\nTreat a clean exit that prints the expected title as the task genuinely working; a non-zero exit or missing title means the generated code does not actually run.` : "",
     `\n# AGENT TRANSCRIPT (${excerpt.note}; capped at 120k chars)\n${excerpt.text}`,
-  ].join("\n");
+  ].join("\n")
+    // Some agents (pi) emit NUL bytes in their transcript; passed as a CLI arg to `claude -p` they
+    // throw "must be a string without null bytes" and the judge never runs. Strip NULs defensively.
+    .replace(/\u0000/g, "");
   writeFileSync(join(runDir, "judge-prompt.txt"), prompt);
 
   // NOTE: this claude build emits 0 bytes with --json-schema, and --bare disables team-plan
