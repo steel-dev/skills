@@ -9,6 +9,7 @@ import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { extractUsage } from "./usage.mjs";
+import { fetchSteelSessions } from "./steel-sessions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -323,8 +324,13 @@ async function runOne(agent, task) {
   console.log(`  $ ${spec.cmd} ${redactArgs(spec.args).map((a) => (a.includes(" ") ? JSON.stringify(a) : a)).join(" ")}`);
   const startMs = Date.now();
   const r = await run(spec.cmd, spec.args, { cwd: spec.cwd, timeoutSec: spec.timeoutSec });
+  const endMs = Date.now();
   writeFileSync(join(runDir, "stdout.txt"), r.stdout);
   writeFileSync(join(runDir, "stderr.txt"), r.stderr);
+
+  // Steel browser sessions opened during this run (count + duration/credits) — a cost proxy.
+  // Buffer the window slightly so sessions created right at the boundaries are captured.
+  const steelSessions = await fetchSteelSessions({ sinceMs: startMs - 3000, untilMs: endMs + 3000 });
 
   // Resolve transcript.
   let transcriptPath = null;
@@ -347,11 +353,13 @@ async function runOne(agent, task) {
     agent, task_id: task.task_id, skill: task.skill, deps: task.deps,
     cmd: spec.cmd, args: redactArgs(spec.args), model: aCfg.model,
     exit_code: r.code, signal: r.signal, timed_out: !!r.timedOut, duration_ms: r.ms,
-    cwd, transcript_bytes: tText.length, skill_signal: skillSignal, usage,
+    started_at: new Date(startMs).toISOString(), ended_at: new Date(endMs).toISOString(),
+    cwd, transcript_bytes: tText.length, skill_signal: skillSignal, usage, steel_sessions: steelSessions,
     stdout_bytes: r.stdout.length, stderr_bytes: r.stderr.length,
   };
   writeFileSync(join(runDir, "meta.json"), JSON.stringify(meta, null, 2));
-  console.log(`  exit=${r.code} ${r.timedOut ? "(TIMEOUT) " : ""}dur=${(r.ms / 1000).toFixed(1)}s transcript=${tText.length}b skill_signal=${skillSignal.loaded}`);
+  const sessInfo = steelSessions.available ? `steel_sessions=${steelSessions.count}` : "steel_sessions=n/a";
+  console.log(`  exit=${r.code} ${r.timedOut ? "(TIMEOUT) " : ""}dur=${(r.ms / 1000).toFixed(1)}s transcript=${tText.length}b skill_signal=${skillSignal.loaded} ${sessInfo}`);
 
   let verdict = null;
   if (!noJudge) {
@@ -401,7 +409,9 @@ const lines = results.map((r) => JSON.stringify({
   agent: r.agent, task_id: r.task_id, skill: r.skill,
   exit_code: r.exit_code, timed_out: r.timed_out, duration_ms: r.duration_ms,
   skill_signal: r.skill_signal?.loaded, skill_loaded: r.verdict?.skill_loaded,
-  overall: r.verdict?.overall, run_dir: r.runDir, error: r.error,
+  overall: r.verdict?.overall, cost_usd: r.usage?.cost_usd ?? null,
+  steel_sessions: r.steel_sessions?.available ? r.steel_sessions.count : null,
+  run_dir: r.runDir, error: r.error,
 })).join("\n");
 writeFileSync(resultsFile, (lines ? lines + "\n" : ""), { flag: "a" });
 

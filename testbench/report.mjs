@@ -50,7 +50,7 @@ function cellFor(agent, task) {
   const glyph = VERDICT_GLYPH[ov] || (verdict?.error ? "⚠️parse" : "❔");
   const flags = `${meta.timed_out ? " ⏱" : ""}${verdict?.overall_derived ? " ᵈ" : ""}`;
   const text = verdict ? `${glyph} ${skill} ${pass}/${a.length}${flags}` : "⚠️norun";
-  return { text, run: { runDir, meta, verdict, pass, total: a.length, ov, usage } };
+  return { text, run: { runDir, meta, verdict, pass, total: a.length, ov, usage, steel: meta.steel_sessions } };
 }
 
 // Build grid
@@ -81,10 +81,11 @@ L.push("");
 
 // Per-agent rollup
 L.push("## Per-agent rollup", "");
-L.push("| Agent | pass | partial | fail | skill-load rate | runs | total cost | total tokens |");
-L.push("|---|---|---|---|---|---|---|---|");
+L.push("| Agent | pass | partial | fail | skill-load rate | runs | total cost | total tokens | steel sessions | steel time |");
+L.push("|---|---|---|---|---|---|---|---|---|---|");
 for (const agent of AGENTS) {
   let pass = 0, partial = 0, fail = 0, loaded = 0, runs = 0, cost = 0, costKnown = false, tokens = 0;
+  let sess = 0, sessKnown = false, sessMs = 0;
   for (const task of TASKS) {
     const c = grid[task.task_id][agent];
     if (!c.run) continue;
@@ -96,15 +97,20 @@ for (const agent of AGENTS) {
     const u = c.run.usage || {};
     if (typeof u.cost_usd === "number") { cost += u.cost_usd; costKnown = true; }
     tokens += (u.input || 0) + (u.output || 0);
+    const s = c.run.steel;
+    if (s && s.available) { sessKnown = true; sess += s.count || 0; sessMs += s.total_duration_ms || 0; }
   }
   const rate = runs ? `${loaded}/${runs}` : "—";
-  L.push(`| ${agent} | ${pass} | ${partial} | ${fail} | ${rate} | ${runs} | ${costKnown ? fmtCost(cost) : "—"} | ${tokens ? tokens.toLocaleString() : "—"} |`);
+  const sessCell = sessKnown ? `${sess}` : "—";
+  const sessTime = sessKnown ? `${Math.round(sessMs / 1000)}s` : "—";
+  L.push(`| ${agent} | ${pass} | ${partial} | ${fail} | ${rate} | ${runs} | ${costKnown ? fmtCost(cost) : "—"} | ${tokens ? tokens.toLocaleString() : "—"} | ${sessCell} | ${sessTime} |`);
 }
 L.push("");
 L.push("_Cost note: codex/claude run on team plans — claude reports a list-price `total_cost_usd`; codex reports tokens only (no per-call cost)._", "");
 
 // Cost & tokens matrix
-L.push("## Cost & tokens (per run)", "");
+L.push("## Cost, tokens & Steel sessions (per run)", "");
+L.push("Cell = `cost · tokens · steel-sessions (session-seconds)`.", "");
 L.push(`| Skill / task | ${AGENTS.join(" | ")} |`);
 L.push(`|---|${AGENTS.map(() => "---").join("|")}|`);
 for (const task of TASKS) {
@@ -112,7 +118,9 @@ for (const task of TASKS) {
     const c = grid[task.task_id][ag];
     if (!c.run) return task.agents.includes(ag) ? "·" : "—";
     const u = c.run.usage || {};
-    return `${fmtCost(u.cost_usd)} · ${fmtTok(u)}t`;
+    const s = c.run.steel;
+    const sess = s && s.available ? `${s.count}s (${Math.round((s.total_duration_ms || 0) / 1000)}s)` : "—";
+    return `${fmtCost(u.cost_usd)} · ${fmtTok(u)}t · ${sess}`;
   });
   L.push(`| \`${task.task_id}\` | ${row.join(" | ")} |`);
 }
