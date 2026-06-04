@@ -1,0 +1,11 @@
+{
+  "name": "steel-skills-testbench",
+  "private": true,
+  "type": "module",
+  "description": "Runtime deps so the harness can execute agent-generated Steel scripts (steel-developer task). Resolved from run-dir cwd via upward node_modules lookup.",
+  "dependencies": {
+    "playwright": "^1.49.0",
+    "steel-sdk": "^0.10.0",
+    "tsx": "^4.19.0"
+  }
+}
