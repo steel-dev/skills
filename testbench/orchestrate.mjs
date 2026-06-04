@@ -295,6 +295,54 @@ function listOutputFiles(cwd) {
   return out;
 }
 
+// Skills whose generated code the harness should actually execute to verify it works (not just
+// judge the source). steel-developer asks for a runnable Steel+Playwright script.
+const EXEC_SKILLS = new Set(["steel-developer"]);
+const STEEL_TITLE_MARKER = "Example Domain"; // example.com's <title>, what the dev script must print
+
+function steelApiKey() {
+  try { return JSON.parse(readFileSync(join(HOME, ".config", "steel", "config.json"), "utf8")).apiKey || null; }
+  catch { return null; }
+}
+
+// Find the runnable entry the agent produced: a .ts/.js/.mjs file that imports steel-sdk or builds a
+// CDP connection. Newest match wins (agents sometimes leave scratch files).
+function findGeneratedScript(cwd) {
+  const exts = new Set([".ts", ".mts", ".cts", ".tsx", ".js", ".mjs", ".cjs", ".jsx"]);
+  let best = null, bestM = 0;
+  for (const f of listOutputFiles(cwd)) {
+    if (f.path.startsWith("node_modules/") || !exts.has(f.path.slice(f.path.lastIndexOf(".")))) continue;
+    let src = "";
+    try { src = readFileSync(join(cwd, f.path), "utf8"); } catch { continue; }
+    if (!/steel-sdk|connectOverCDP|sessions\.create/.test(src)) continue;
+    const m = statSync(join(cwd, f.path)).mtimeMs;
+    if (m > bestM) { best = f.path; bestM = m; }
+  }
+  return best;
+}
+
+// Run the agent's generated script with tsx against a real Steel session. Resolved from the run cwd,
+// it picks up steel-sdk/playwright/tsx from testbench/node_modules via upward module resolution.
+async function execGeneratedScript(cwd, runDir, timeoutSec) {
+  const file = findGeneratedScript(cwd);
+  if (!file) return { ran: false, reason: "no runnable Steel script found in cwd" };
+  const key = steelApiKey();
+  if (!key) return { ran: false, file, reason: "no Steel API key (cannot execute)" };
+  const tsx = join(here, "node_modules", ".bin", "tsx");
+  if (!existsSync(tsx)) return { ran: false, file, reason: "tsx not installed (run npm install in testbench/)" };
+  // run() forwards process.env to the child; the generated script reads STEEL_API_KEY from it.
+  process.env.STEEL_API_KEY = key;
+  const r = await run(tsx, [file], { cwd, timeoutSec });
+  writeFileSync(join(runDir, "exec-stdout.txt"), r.stdout || "");
+  writeFileSync(join(runDir, "exec-stderr.txt"), r.stderr || "");
+  const printedTitle = (r.stdout || "").includes(STEEL_TITLE_MARKER);
+  return {
+    ran: true, file, exit_code: r.code, timed_out: !!r.timedOut, duration_ms: r.ms,
+    printed_expected_title: printedTitle,
+    stdout_tail: (r.stdout || "").slice(-1500), stderr_tail: (r.stderr || "").slice(-1500),
+  };
+}
+
 // Extract the verdict object from claude's `--output-format json` envelope (.result holds the
 // model's text). Tolerates code fences and surrounding prose by slicing the outermost braces.
 function parseVerdict(stdout) {
@@ -331,7 +379,7 @@ function normalizeVerdict(v) {
   return v;
 }
 
-async function judge(task, agent, runDir, cwd, transcriptText, skillSignal) {
+async function judge(task, agent, runDir, cwd, transcriptText, skillSignal, devExec = null) {
   const files = listOutputFiles(cwd);
   const filePreviews = files.slice(0, 12).map((f) => {
     let head = "";
@@ -352,6 +400,11 @@ async function judge(task, agent, runDir, cwd, transcriptText, skillSignal) {
     `\n# NON-LLM SKILL-LOAD SIGNAL\nloaded=${skillSignal?.loaded ?? "unknown"}; evidence=${skillSignal?.evidence ?? "none"}\nUse this only as a hint; base the final skill_loaded verdict on the transcript and artifacts.`,
     `\n# FILES CREATED IN WORKING DIR\n${files.map((f) => `${f.path} (${f.bytes}b)`).join("\n") || "(none)"}`,
     `\n# FILE PREVIEWS\n${filePreviews || "(none)"}`,
+    devExec ? `\n# GENERATED SCRIPT EXECUTION (the harness actually ran the agent's script)\n${
+      devExec.ran
+        ? `file=${devExec.file}\nexit_code=${devExec.exit_code}\ntimed_out=${devExec.timed_out}\nprinted_expected_title=${devExec.printed_expected_title} (expected "${STEEL_TITLE_MARKER}")\nstdout_tail:\n${devExec.stdout_tail}\nstderr_tail:\n${devExec.stderr_tail}`
+        : `not run: ${devExec.reason}`
+    }\nTreat a clean exit that prints the expected title as the task genuinely working; a non-zero exit or missing title means the generated code does not actually run.` : "",
     `\n# AGENT TRANSCRIPT (${excerpt.note}; capped at 120k chars)\n${excerpt.text}`,
   ].join("\n");
   writeFileSync(join(runDir, "judge-prompt.txt"), prompt);
@@ -387,10 +440,6 @@ async function runOne(agent, task) {
   writeFileSync(join(runDir, "stdout.txt"), r.stdout);
   writeFileSync(join(runDir, "stderr.txt"), r.stderr);
 
-  // Steel browser sessions opened during this run (count + duration/credits) — a cost proxy.
-  // Buffer the window slightly so sessions created right at the boundaries are captured.
-  const steelSessions = await fetchSteelSessions({ sinceMs: startMs - 3000, untilMs: endMs + 3000 });
-
   // Resolve transcript.
   let transcriptPath = null;
   if (spec.stdoutIsTranscript) {
@@ -408,12 +457,28 @@ async function runOne(agent, task) {
   const skillSignal = detectSkillSignal(tText + "\n" + r.stdout, task);
   const usage = extractUsage(agent, { stdout: r.stdout, transcript: tText });
 
+  // For skills that produce runnable code, execute it to verify it actually works.
+  let devExec = null;
+  if (EXEC_SKILLS.has(task.skill)) {
+    devExec = await execGeneratedScript(cwd, runDir, aCfg.timeoutSec);
+    const note = devExec.ran
+      ? `exit=${devExec.exit_code}${devExec.timed_out ? " (TIMEOUT)" : ""} printed_title=${devExec.printed_expected_title}`
+      : `skipped (${devExec.reason})`;
+    console.log(`  ⚙ exec generated script: ${note}`);
+  }
+
+  // Steel browser sessions opened during this run (count + duration/credits) — a cost proxy. Fetched
+  // after the optional exec so a session the generated script opens is counted too. Buffer the window
+  // slightly so sessions created right at the boundaries are captured.
+  const steelSessions = await fetchSteelSessions({ sinceMs: startMs - 3000, untilMs: Date.now() + 3000 });
+
   const meta = {
     agent, task_id: task.task_id, skill: task.skill, deps: task.deps,
     // Resolved (post-substitution) prompt/assertions actually shown to the agent — so --rejudge
     // scores against what really ran, not the un-substituted {{session_id}} token in tasks.json.
     prompt: task.prompt, assertions: task.assertions, expected_output: task.expected_output,
     ...(task.requires_fixture ? { fixture_session_id: fixtures.session_id } : {}),
+    ...(devExec ? { dev_exec: devExec } : {}),
     cmd: spec.cmd, args: redactArgs(spec.args), model: aCfg.model,
     exit_code: r.code, signal: r.signal, timed_out: !!r.timedOut, duration_ms: r.ms,
     started_at: new Date(startMs).toISOString(), ended_at: new Date(endMs).toISOString(),
@@ -428,7 +493,7 @@ async function runOne(agent, task) {
   if (!noJudge) {
     if (!tText) { console.log("  ! no transcript captured — skipping judge"); }
     else {
-      verdict = await judge(task, agent, runDir, cwd, tText, skillSignal);
+      verdict = await judge(task, agent, runDir, cwd, tText, skillSignal, devExec);
       writeFileSync(join(runDir, "verdict.json"), JSON.stringify(verdict, null, 2));
       console.log(`  verdict: ${verdict?.overall ?? "?"}  skill_loaded=${verdict?.skill_loaded ?? "?"}`);
     }
@@ -453,7 +518,7 @@ if (rejudgeDir) {
   const tText = transcriptText(runDir);
   const skillSignal = meta.skill_signal || detectSkillSignal(tText, task);
   console.log(`▶ rejudge ${meta.agent} :: ${meta.task_id} (transcript ${tText.length}b)`);
-  const verdict = await judge(task, meta.agent, runDir, meta.cwd, tText, skillSignal);
+  const verdict = await judge(task, meta.agent, runDir, meta.cwd, tText, skillSignal, meta.dev_exec ?? null);
   writeFileSync(join(runDir, "verdict.json"), JSON.stringify(verdict, null, 2));
   console.log(`  verdict: ${verdict?.overall ?? "?"}  skill_loaded=${verdict?.skill_loaded ?? "?"}`);
   process.exit(0);

@@ -5,3 +5,4 @@ tasks.json
 .env
 .env.local
 REPORT.md
+node_modules/

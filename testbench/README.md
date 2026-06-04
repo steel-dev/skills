@@ -11,7 +11,8 @@ finding (we've already seen it).
 
 ## How it works
 
-For every `(agent, task)` pair:
+Once per matrix, if any selected task consumes the fixture, a **seed** step runs first (see *Seeded
+session & the chain* below). Then for every `(agent, task)` pair:
 
 1. **Isolate** — a fresh working dir is created under `runs/<agent>/<task>/<ts>/cwd/`, and the
    skill (plus its manifest `requires` skill-deps) is **copied** into both:
@@ -30,9 +31,11 @@ For every `(agent, task)` pair:
    wrapped in a timeout and spawned in its own process group (so lingering sandbox helpers get
    reaped). stdin is closed so agents don't block waiting on it.
 3. **Capture** — the agent's transcript is collected (stdout JSONL event stream for
-   codex/opencode/pi; the on-disk session `.jsonl` for claude) into `transcript.jsonl`.
-4. **Judge** — `claude` reads the prompt, the eval's assertions, the transcript, and the files
-   created in `cwd/`, and returns a structured verdict (see schema below).
+   codex/opencode/pi; the on-disk session `.jsonl` for claude) into `transcript.jsonl`. For
+   `EXEC_SKILLS` (e.g. `steel-developer`) the harness then **executes** the generated script (see
+   *Executing generated code* below) and records `dev_exec`.
+4. **Judge** — `claude` reads the prompt, the eval's assertions, the transcript, the files created
+   in `cwd/`, and any execution result, and returns a structured verdict (see schema below).
 5. **Record** — per-run artifacts land in the run dir; a one-line summary is appended to
    `runs/results.jsonl`.
 
@@ -44,22 +47,56 @@ testbench/
   gen-tasks.mjs          # builds tasks.json from each skill's evals/evals.json + manifest.json
   eval-overrides.json    # testbench-local eval fixes merged by task_id (skills are NOT edited)
   tasks.json             # generated; one "smoke" eval per skill (gitignored)
-  orchestrate.mjs        # the runner: setup -> run -> capture -> judge -> record
+  orchestrate.mjs        # the runner: seed -> setup -> run -> exec -> capture -> judge -> record
   usage.mjs              # extracts token usage + USD cost from each agent's transcript
   steel-sessions.mjs     # queries Steel API for sessions opened during a run (cost proxy)
   report.mjs             # renders REPORT.md (matrix, rollups, cost/tokens/sessions, run detail)
+  seed/
+    seed-session.mjs     # creates one real, deterministically-failed Steel session (the fixture)
+  package.json           # runtime deps (steel-sdk, playwright, tsx) so the harness can EXEC scripts
   judge/
     judge.md             # judge instructions
     judge.schema.json    # verdict shape (skill_loaded, assertions[], task_succeeded, overall, …)
   runs/                  # generated run artifacts (gitignored)
+    _fixtures.json       # the seeded session id shared by the chain (gitignored)
     <agent>/<task>/<ts>/
       prompt.txt  stdout.txt  stderr.txt  transcript.jsonl
-      meta.json          # cmd/args (secrets redacted), exit, duration, skill_signal
+      meta.json          # cmd/args (secrets redacted), exit, duration, skill_signal, dev_exec
+      exec-stdout.txt    # (exec skills) output of the harness-run generated script
       judge-prompt.txt  judge-raw.json  verdict.json
     results.jsonl        # one line per (agent, task)
   .env                   # secrets for agents lacking persistent auth (gitignored)
+  node_modules/          # installed runtime deps (gitignored)
   REPORT.md              # (optional) rendered matrix (gitignored)
 ```
+
+## Seeded session & the chain
+
+Some skills are meaningless against a made-up id — debugging or planning a fix for a session that
+never existed only tests what an agent *says*. So the harness seeds **one real, deterministically
+failed** Steel session before the matrix and injects it into the tasks that need it:
+
+- `seed/seed-session.mjs` opens a cloud session, submits **wrong credentials** to
+  `the-internet.herokuapp.com/login` (a purpose-built deterministic login — `quotes.toscrape.com`
+  accepts *any* credentials, so it can't fail), verifies the `"Your username is invalid!"` failure
+  rendered, releases the session (logs/traces/recording persist), and writes `runs/_fixtures.json`.
+- Tasks reference the fixture with a `{{session_id}}` token in their prompt/assertions (via
+  `eval-overrides.json`); `gen-tasks.mjs` flags those `requires_fixture`. `orchestrate.mjs` runs the
+  seed once up front and substitutes the real id at run time, persisting the resolved prompt to
+  `meta.json` so `--rejudge` stays faithful. `--no-seed` reuses an existing `runs/_fixtures.json`.
+
+`steel-session-debugging` and `steel-reliability` run against this real session, so they read genuine
+logs/traces/network forensics instead of a hypothetical.
+
+## Executing generated code (EXEC_SKILLS)
+
+For skills that produce *runnable* code (currently `steel-developer`), the harness doesn't just judge
+the source — it **runs it**. After the agent writes its script, `orchestrate.mjs` finds the entry
+(a file importing `steel-sdk` / building a CDP connection), runs it with `tsx` against a real Steel
+session (`STEEL_API_KEY` injected), and records `dev_exec` (exit code, whether it printed the expected
+page title) into `meta.json` + `exec-stdout.txt`. The judge sees the execution result and scores an
+assertion on it. Deps resolve from `testbench/node_modules` via upward lookup, so **run `npm install`
+in `testbench/` once** (`playwright` installs without a browser download — `connectOverCDP` needs none).
 
 ## Prerequisites & auth
 
@@ -71,7 +108,9 @@ testbench/
 > skills from those global dirs (`rm -rf ~/.claude/skills/<name> ~/.agents/skills/<name>`).
 > They're reinstallable (`npx skills add steel-dev/skills --skill <name>` or `steel init`).
 
-The `steel` CLI must be installed and authed (`steel doctor` should pass) for live runs.
+The `steel` CLI must be installed and authed (`steel doctor` should pass) for live runs. Run
+`npm install` in `testbench/` once so the harness can execute generated scripts (`steel-developer`);
+`playwright` installs without a browser download since `connectOverCDP` needs no local browser.
 Each agent uses its **own persistent auth** where possible — no ambient env keys required:
 
 | Agent | Headless command | Auth | Default model |
@@ -108,7 +147,10 @@ node testbench/orchestrate.mjs --agent codex                   # one agent, all 
 # 4. run without judging (capture transcripts only)
 node testbench/orchestrate.mjs --agent pi --no-judge
 
-# 5. re-score an existing run without re-running the agent (cheap iteration)
+# 5. reuse the existing seeded session instead of seeding a fresh one
+node testbench/orchestrate.mjs --task steel-session-debugging__e1 --no-seed
+
+# 6. re-score an existing run without re-running the agent (cheap iteration)
 node testbench/orchestrate.mjs --rejudge runs/codex/steel-browser__e1/<ts>
 ```
 

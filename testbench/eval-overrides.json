@@ -5,6 +5,18 @@
     "prompt": "Turn my recurring book price lookup into a reusable skill. The task: given a book product page URL, record its title, price, and availability. Example (first recording): https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html . For the second recording use a different book: https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html .",
     "expected_output": "The agent records two read-only Steel runs against the two book URLs, compares the traces to find the product-URL parameter and the stable title/price/availability selectors, scaffolds a generated skill with frontmatter and evals, and verifies it with a third book URL."
   },
+  "steel-developer__e1": {
+    "_reason": "The harness now executes the generated script (EXEC_SKILLS) against a real Steel session, so add an assertion that it actually runs and prints example.com's title. The original six code-correctness assertions are preserved.",
+    "assertions": [
+      "Uses process.env.STEEL_API_KEY and validates it is present",
+      "Constructs the CDP URL explicitly with wss://connect.steel.dev?apiKey=...&sessionId=...",
+      "Does not use session.websocketUrl or session.websocket_url",
+      "Uses browser.contexts()[0] and the existing page when available",
+      "Does not call browser.newContext()",
+      "Closes the browser and releases the Steel session in a cleanup path",
+      "When executed by the harness, the script runs to a clean exit and prints the page title \"Example Domain\""
+    ]
+  },
   "steel-browser__e1": {
     "_reason": "Source assertion 'Includes text, author, and tags fields' demands a field literally named 'text', but the prompt only says 'with authors and tags' — penalizing agents that name the field 'quote'. Reword to test structure, not exact key names.",
     "assertions": [
