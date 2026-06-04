@@ -59,16 +59,22 @@ for (const [skillName, entry] of Object.entries(manifest.skills)) {
   const taskId = `${skillName}__e${chosen.id}`;
   const ov = overrides[taskId] || {};
   const overridden = Object.keys(ov).filter((k) => !k.startsWith("_"));
+  const prompt = ov.prompt ?? chosen.prompt;
+  const assertions = ov.assertions ?? chosen.assertions ?? [];
+  // A task "consumes" the seeded fixture when it references {{session_id}}; orchestrate runs the
+  // seed first and substitutes the real id at run time.
+  const requiresFixture = /\{\{session_id\}\}/.test(prompt) || assertions.some((a) => /\{\{session_id\}\}/.test(a));
   tasks.push({
     task_id: taskId,
     skill: skillName,
     skill_path: skillPath,
     deps: resolveDeps(skillName), // skill names; their paths == manifest.skills[name].path
     eval_id: chosen.id,
-    prompt: ov.prompt ?? chosen.prompt,
+    prompt,
     expected_output: ov.expected_output ?? chosen.expected_output ?? "",
-    assertions: ov.assertions ?? chosen.assertions ?? [],
+    assertions,
     agents,
+    ...(requiresFixture ? { requires_fixture: true } : {}),
     ...(overridden.length ? { overridden } : {}),
   });
 }
@@ -77,5 +83,5 @@ const out = { generated_from: "evals + manifest", smoke_eval_id: smokeId, count:
 writeFileSync(join(here, "tasks.json"), JSON.stringify(out, null, 2) + "\n");
 console.log(`Wrote ${tasks.length} tasks to tasks.json`);
 for (const t of tasks) {
-  console.log(`  ${t.task_id}  agents=[${t.agents.join(",")}]  deps=[${t.deps.join(",")}]${t.overridden ? `  overridden=[${t.overridden.join(",")}]` : ""}`);
+  console.log(`  ${t.task_id}  agents=[${t.agents.join(",")}]  deps=[${t.deps.join(",")}]${t.requires_fixture ? "  fixture=session_id" : ""}${t.overridden ? `  overridden=[${t.overridden.join(",")}]` : ""}`);
 }
