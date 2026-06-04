@@ -42,7 +42,8 @@ testbench/
   tasks.json             # generated; one "smoke" eval per skill (gitignored)
   orchestrate.mjs        # the runner: setup -> run -> capture -> judge -> record
   usage.mjs              # extracts token usage + USD cost from each agent's transcript
-  report.mjs             # renders REPORT.md (matrix, rollups, cost/tokens, run detail)
+  steel-sessions.mjs     # queries Steel API for sessions opened during a run (cost proxy)
+  report.mjs             # renders REPORT.md (matrix, rollups, cost/tokens/sessions, run detail)
   judge/
     judge.md             # judge instructions
     judge.schema.json    # verdict shape (skill_loaded, assertions[], task_succeeded, overall, …)
@@ -57,6 +58,14 @@ testbench/
 ```
 
 ## Prerequisites & auth
+
+> ⚠️ **Clean global skills first (recommended).** Agents load globally-installed skills
+> (`~/.claude/skills`, `~/.agents/skills`, `~/.pi/agent/skills`) *in addition* to the run-dir
+> ones. A globally-installed browser/Steel skill (e.g. `agent-browser`, `browser-skill-creator`,
+> `amazon-bike-deal-finder`, or another `steel-*`) can trigger alongside or instead of the skill
+> under test and contaminate results. Before a clean comparison, remove competing browser/Steel
+> skills from those global dirs (`rm -rf ~/.claude/skills/<name> ~/.agents/skills/<name>`).
+> They're reinstallable (`npx skills add steel-dev/skills --skill <name>` or `steel init`).
 
 The `steel` CLI must be installed and authed (`steel doctor` should pass) for live runs.
 Each agent uses its **own persistent auth** where possible — no ambient env keys required:
@@ -139,6 +148,17 @@ a field literally named `text` when the prompt only asked for "authors and tags"
 a per-run cost/token matrix, and cost in the run detail. Note: agents that **install globally by
 design** (e.g. `steel-skill-creator` writes to `~/.agents/skills`) escape the per-run `cwd`
 containment — that's inherent to what the skill does, not a harness leak.
+
+### Steel sessions (a direct cost proxy)
+
+`steel-sessions.mjs` queries the Steel API (`GET /v1/sessions`, key from
+`~/.config/steel/config.json`) for sessions created within each run's time window and records
+the count plus total `duration`/`creditsUsed`/`proxyBytesUsed` in `meta.steel_sessions`. The
+report shows sessions started + session-seconds per run and per agent. Caveats: attribution
+assumes **sequential** runs (it does) and that no other Steel activity overlaps the window;
+`duration`/`credits` are read right after the run, so a session not yet finalized may report `0`
+(the **count** is always reliable). Only runs executed after this feature landed populate it —
+re-run a task/matrix to fill the column.
 
 ## Judge & verdict
 
