@@ -1,0 +1,63 @@
+{
+  "name": "steel-skills",
+  "interface": {
+    "displayName": "Steel Skills"
+  },
+  "plugins": [
+    {
+      "name": "steel-browser",
+      "source": {
+        "source": "local",
+        "path": "./steel-browser"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "operate"
+    },
+    {
+      "name": "steel-developer",
+      "source": {
+        "source": "local",
+        "path": "./steel-developer"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "build"
+    },
+    {
+      "name": "steel-session-debugging",
+      "source": {
+        "source": "local",
+        "path": "./steel-session-debugging"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "debug"
+    },
+    {
+      "name": "steel-reliability",
+      "source": {
+        "source": "local",
+        "path": "./steel-reliability"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "reliability"
+    },
+    {
+      "name": "steel-skill-creator",
+      "source": {
+        "source": "local",
+        "path": "./steel-skill-creator"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "create"
+    }
+  ]
+}
