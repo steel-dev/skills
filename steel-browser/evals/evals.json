@@ -22,6 +22,7 @@
       "assertions": [
         "Starts an interactive browser session with steel browser start",
         "Uses a human-readable named session",
+        "Uses default session settings unless the task requires an override supported by the account",
         "Takes a fresh snapshot before interacting with element refs",
         "Submits the form and displays or saves the response",
         "Stops the browser session before finishing"
@@ -37,6 +38,18 @@
         "Routes evidence collection to steel-session-debugging",
         "Routes CAPTCHA or bot-detection mitigation to steel-reliability",
         "Does not promise guaranteed bypass"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Steel is already installed and worked in one tool call, but the next tool call reports 'steel: command not found'. Continue the browsing task without installing a different CLI package.",
+      "expected_output": "The agent uses the installed executable's reported path consistently across tool calls, checks the installed version and authorization as needed, and reports any remaining blocker honestly.",
+      "files": [],
+      "assertions": [
+        "Uses the installed Steel executable rather than switching to a different CLI package",
+        "Does not assume a PATH change in one shell persists across separate tool calls",
+        "Uses the installed CLI's help or supported prompts instead of assuming version-specific login flags",
+        "Does not claim the browsing task succeeded based only on installation or diagnostics"
       ]
     }
   ]

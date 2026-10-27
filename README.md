@@ -4,6 +4,17 @@ Official agent skills for using Steel cloud browsers.
 
 ## Install
 
+Install the Steel CLI using the [official installer](https://setup.steel.dev):
+
+```bash
+curl -fsS https://setup.steel.dev | sh -s -- --agent
+```
+
+Install skills in the environment where the agent's tools run. A local
+installation is not automatically available to a remote or containerized agent.
+Follow the installer's prerequisite and authorization prompts; report any
+unfinished steps rather than treating installation alone as ready to browse.
+
 List available skills:
 
 ```bash
@@ -25,6 +36,24 @@ Install for a specific agent:
 ```bash
 npx skills add steel-dev/skills --skill steel-browser -a claude-code -g
 ```
+
+## First use
+
+Confirm that your client can load `steel-browser`, then check the CLI:
+
+```bash
+steel --version
+steel doctor --preflight
+```
+
+If `steel` is not on PATH, use the executable path reported by the installer
+(typically `"$HOME/.steel/bin/steel"`) in each tool call. Shell environment changes
+may not persist between calls; reinstalling a different CLI package is not a PATH fix.
+
+Follow the installed CLI's supported authentication flow without sharing
+credentials in chat. Successful diagnostics establish API access, not completion
+of a browsing task. Use default session settings unless the task requires an
+account-supported override, and stop any interactive sessions created for the task.
 
 ## Skills
 
