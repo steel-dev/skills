@@ -154,11 +154,13 @@ steel browser live
 
 ### Stale state or stuck mapping
 
-Fix:
+Only reset a session created for the current task. If its ownership is uncertain,
+inspect with `steel --json browser sessions` and report the blocker; do not stop
+other sessions.
 
 ```bash
-steel browser stop --all
-steel browser start --session fresh-job
+steel --json browser stop --session "$TASK_SESSION"
+steel --json browser start --session "$TASK_SESSION"
 ```
 
 ## Safe CDP handling

@@ -2,7 +2,7 @@
 
 Use this reference when planning session lifecycle, mode selection, and endpoint behavior.
 
-## Command ownership
+## Command behavior
 
 Steel-owned lifecycle commands:
 
@@ -12,7 +12,8 @@ Steel-owned lifecycle commands:
 - `steel browser live`
 - `steel browser captcha solve`
 
-All other `steel browser <command>` operations are inherited passthrough behavior backed by the vendored `agent-browser` runtime.
+Use the installed CLI's `steel browser <command> --help` for action flags and
+response details. Do not rely on a particular implementation or transport.
 
 ## Mode selection
 
@@ -51,20 +52,14 @@ Main flags:
 - `--credentials` — enable credential injection for the session
 - `--profile <name>` — load a named browser profile into the session
 - `--update-profile` — save session state back to the profile on end
-- `--inactivity-timeout <ms>` — release the session after this much idle time (no CDP command or remote input). Defaults to 120000 (2 min); pass `0` to disable.
+- `--inactivity-timeout <ms>` — release the session after this much idle time.
 
-Note: sessions created via the CLI auto-release after ~2 minutes of inactivity by default. If you expect a session to sit idle between manual steps, pass `--inactivity-timeout 0` (disable) or a larger value at `start`, and check `inactivity_timeout` in the start output.
+Check the installed version's help and start output before relying on a timeout
+default or output field.
 
-Parse these output fields:
-
-- `id`: stable session identifier
-- `mode`: execution mode
-- `name`: session alias if provided
-- `live_url`: live-view URL when available
-- `connect_url`: display-safe URL with sensitive values redacted
-- `inactivity_timeout`: idle-release limit when set (human output); `inactivityTimeoutMs` in JSON
-
-Use `id` for stable machine parsing. Treat `connect_url` as display metadata, not a raw credential.
+For machine consumption, pass `--json`, inspect the success envelope and its
+`data`, and use the installed version's help for field details. Treat any
+connection URL as display metadata, not a raw credential.
 
 ## CAPTCHA mode mapping (`/v1/sessions` fields)
 

@@ -17,13 +17,41 @@ Use Steel CLI browser tools to complete live web work now.
 
 ## Setup
 
-If Steel is missing or unauthenticated:
+If Steel is missing, use the official installer:
+
+```bash
+curl -fsS https://setup.steel.dev | sh -s -- --agent
+```
+
+Install in the environment where the agent's tools run. Follow prerequisite and
+authorization prompts, and report blocked steps instead of claiming setup is complete.
+
+Use the installed Steel executable for the examples below. If `steel` is not on
+PATH, use the path reported by the installer (typically `"$HOME/.steel/bin/steel"`)
+in every tool call. A shell PATH change may not persist to the next call; switching
+to a different CLI package does not fix that environment issue.
+
+Check version and authorization without printing credentials:
 
 ```bash
 steel --version
-steel login
 steel doctor --preflight
 ```
+
+If authentication is required, follow `steel login` and the installed CLI's prompts.
+Ask the user to complete any required approval without exposing credentials in chat.
+Pending authorization is not readiness. Check `--help` for the installed version
+rather than assuming a particular login mechanism or unsupported flags.
+
+If approval pauses setup, preserve the original browser task. After the user
+approves, resume the saved login as directed by the installed CLI (commonly
+`steel login --resume`) or rerun the same setup command, then continue the
+original task. Do not replace it with a setup demo.
+
+Installing a skill, or finding its `SKILL.md`, does not prove that the current
+client loaded it. Use the client's native skill-loading mechanism before the
+first task. Do not reinstall a readable skill just to prove loading; only
+investigate installation when the client cannot discover it.
 
 If the CLI or installed skills look broken, run:
 
@@ -31,7 +59,9 @@ If the CLI or installed skills look broken, run:
 steel skills doctor
 ```
 
-Done when this smoke test succeeds:
+Setup diagnostics only check installation/API access. They do not prove that
+the client loaded this skill or that the requested browser task succeeded.
+A small content check is:
 
 ```bash
 steel scrape https://example.com
@@ -51,22 +81,31 @@ Start with the smallest tool that can finish the task. Escalate from scrape/scre
 ## Interactive Session Workflow
 
 ```bash
-steel browser start --session my-task --session-timeout 3600000
-steel browser navigate https://example.com --session my-task
-steel browser snapshot -i --session my-task
-steel browser click @e1 --session my-task
-steel browser wait --load networkidle --session my-task
-steel browser snapshot -i --session my-task
-steel browser stop --session my-task
+SESSION="steel-task-$(date +%s)-$$"
+steel --json browser start --session "$SESSION"
+steel --json browser navigate https://example.com --session "$SESSION"
+steel --json browser snapshot -i --session "$SESSION"
+steel --json browser click @e1 --session "$SESSION"
+steel --json browser wait --load networkidle --session "$SESSION"
+steel --json browser snapshot -i --session "$SESSION"
+steel --json browser stop --session "$SESSION"
 ```
 
 Rules:
 
 - Always use the same `--session <name>` on every command.
+- Use a task-unique session name; do not reuse or replace a session that may
+  belong to another task.
+- Start with default session settings so the API can apply account-compatible limits. Set `--session-timeout` only when the task needs it and the account supports the requested duration.
 - Take a fresh `snapshot -i` after navigation or DOM changes because element refs expire.
 - Prefer `@eN` refs from snapshots over brittle CSS selectors.
 - Use `steel browser batch` when a sequence needs an action and immediate re-snapshot.
-- Release/stop sessions unless the user explicitly asks to keep them open.
+- For machine consumption, pass `--json` and read the success envelope and its
+  `data`; use the installed version's `--help` rather than assuming a response
+  shape beyond that.
+- Once `start` succeeds, stop that exact session after the task in a finally/
+  failure path: `steel --json browser stop --session "$SESSION"`. Never use
+  `stop --all` for task cleanup. Keep it open only when the user explicitly asks.
 
 ## Troubleshooting
 
