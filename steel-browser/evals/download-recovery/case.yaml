@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: download-recovery
+expected_outcome: |
+  Plans a named-session browser download with click before foreground wait,
+  explicit local output and content verification, bounded same-session recovery,
+  and exact cleanup. Does not invent commands or claim execution.

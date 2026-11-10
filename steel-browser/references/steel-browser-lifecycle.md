@@ -1,170 +1,113 @@
-# Steel Browser Lifecycle and Modes
+# Session lifecycle and endpoints (v0.5.0)
 
-Use this reference when planning session lifecycle, mode selection, and endpoint behavior.
+Use this reference for ownership, endpoint selection, profiles, and release.
+The CLI sends browser actions to Steel's HTTP Commands API; it does not manage
+a local browser daemon or inject CDP arguments into another CLI.
 
-## Command behavior
-
-Steel-owned lifecycle commands:
-
-- `steel browser start`
-- `steel browser stop`
-- `steel browser sessions`
-- `steel browser live`
-- `steel browser captcha solve`
-
-Use the installed CLI's `steel browser <command> --help` for action flags and
-response details. Do not rely on a particular implementation or transport.
-
-## Mode selection
-
-- Cloud mode is default.
-- Self-hosted mode is used when `--local` or `--api-url <url>` is provided.
-- Keep one mode for an entire workflow unless the user explicitly asks to switch.
-
-## Endpoint precedence
-
-Self-hosted endpoint precedence:
-
-1. `--api-url <url>`
-2. `STEEL_BROWSER_API_URL`
-3. `STEEL_LOCAL_API_URL`
-4. `browser.apiUrl` in `~/.config/steel/config.json`
-5. `http://localhost:3000/v1`
-
-Cloud endpoint precedence:
-
-1. `STEEL_API_URL`
-2. `https://api.steel.dev/v1`
-
-## `steel browser start` contract
-
-Purpose: create or attach a session.
-
-Main flags:
-
-- `--local`
-- `--api-url <url>`
-- `--session <name>`
-- `--stealth`
-- `--proxy <url>`
-- `--session-solve-captcha`
-- `--namespace <name>` — credential namespace for the session
-- `--credentials` — enable credential injection for the session
-- `--profile <name>` — load a named browser profile into the session
-- `--update-profile` — save session state back to the profile on end
-- `--inactivity-timeout <ms>` — release the session after this much idle time.
-
-Check the installed version's help and start output before relying on a timeout
-default or output field.
-
-For machine consumption, pass `--json`, inspect the success envelope and its
-`data`, and use the installed version's help for field details. Treat any
-connection URL as display metadata, not a raw credential.
-
-## CAPTCHA mode mapping (`/v1/sessions` fields)
-
-Use these creation-time configurations:
-
-- Off (default): no captcha flags.
-  API fields: `solveCaptcha = false` and no `stealthConfig.autoCaptchaSolving`.
-- Manual: `steel browser start --session <name> --session-solve-captcha`.
-  API fields: `solveCaptcha = true`, `stealthConfig.autoCaptchaSolving = false`.
-- Auto: `steel browser start --session <name> --stealth`.
-  API fields: `solveCaptcha = true`, `stealthConfig.autoCaptchaSolving = true`.
-
-Manual solve command:
+## Create one task-owned session
 
 ```bash
-steel browser captcha solve --session <name>
+SESSION="steel-task-$(date +%s)-$$"
+steel --json browser start --session "$SESSION"
 ```
 
-Optional targeting for a specific detected challenge:
+Retain the returned name/ID as the task's ownership record. A unique name avoids
+replacing a saved session from another task. In v0.5, starting an existing name
+replaces its saved session and reports whether the prior session was released;
+do not use replacement as a generic recovery strategy.
+
+Creation options include `--timeout <milliseconds>`, `--inactivity-timeout`,
+`--stealth`, `--proxy <url>`, `--solve-captcha`, `--profile`, `--update-profile`,
+`--namespace`, `--credentials`, and `--metadata KEY=VALUE`. Use only options the
+task needs and the account supports. `--session-timeout` is an alias for
+`--timeout`; neither is the action-wait timeout.
+
+The default inactivity timeout is ten minutes in v0.5; the session lifetime is
+also bounded by its create-time timeout/account policy. Read actual start
+output rather than inventing an expiry. A timeout is a backstop, not a substitute
+for releasing a session when the task ends.
+
+## Use and stop the same session
 
 ```bash
-steel browser captcha solve --session <name> --page-id <id> --task-id <id>
+steel --json browser navigate https://example.com --session "$SESSION"
+steel --json browser snapshot -i --session "$SESSION"
+steel --json browser stop --session "$SESSION"
 ```
 
-When auto solving is enabled, wait for solving to finish and use screenshots to monitor progress:
+After successful creation, arrange an exact-session stop on both completion and
+failure. Retrieve artifacts before stopping. If the stop fails, retain the
+ownership details for recovery and report cleanup as unresolved.
+
+For a session created elsewhere, actions can use `--session <session-id>`.
+Stopping an ID-attached session only forgets the local attachment; it does not
+release the cloud browser. `browser stop --all` also leaves attached sessions
+running. Release an external session only when explicitly authorized:
 
 ```bash
-steel browser screenshot /tmp/captcha-check.png --session <name>
+steel --json sessions get <session-id>
+steel --json sessions release <session-id>
 ```
 
-## `steel browser stop` contract
+Do not use `browser stop --all` or `sessions release --all` as task cleanup or a
+default reset. If independent release proof is needed, query the exact owned
+ID and check its returned status rather than listing/releasing an account's
+sessions.
 
-Purpose: stop active sessions.
+## Endpoint selection
 
-Main flags:
+The API URL precedence is:
 
-- `--session <name>`
-- `--all`
-- `--local`
-- `--api-url <url>`
+1. `--api-url <url>`.
+2. `--local`: configured `browser.apiUrl`, or `http://localhost:3000/v1`.
+3. `STEEL_API_URL`.
+4. `https://api.steel.dev/v1`.
 
-## `steel browser sessions` contract
+Use one endpoint and mode consistently across the workflow. The old
+`STEEL_BROWSER_API_URL` and `STEEL_LOCAL_API_URL` precedence rules and generic
+`--cdp`/`--auto-connect` passthrough do not apply to v0.5.
 
-Purpose: list session metadata as JSON.
+Device credentials are bound to their authorization context and are not
+forwarded to a different API origin. For self-hosted use, configure the intended
+endpoint/authentication rather than copying a cloud device grant. The server
+must enable `ENABLE_COMMANDS_API=true`; `steel dev start` does not set it for you.
 
-Main flags:
-
-- `--local`
-- `--api-url <url>`
-- `--raw`
-
-`connectUrl` values are display-safe and redact sensitive query values.
-
-## `steel browser captcha solve` contract
-
-Purpose: manually trigger CAPTCHA solving for an active or named session.
-
-Main flags:
-
-- `--session-id <id>`
-- `--session <name>`
-- `--page-id <id>`
-- `--url <url>`
-- `--task-id <id>`
-- `--local`
-- `--api-url <url>`
-- `--raw`
-
-## `steel browser live` contract
-
-Purpose: print the active session live-view URL.
-
-Main flags:
-
-- `--session <name>`
-- `--local`
-- `--api-url <url>`
-
-## Profile persistence
+## Inspect and watch
 
 ```bash
-steel browser start --session "$SESSION" --profile myapp --update-profile
+steel --json browser sessions
+steel browser live --session "$SESSION"
 ```
 
-- `--profile <name>`: Load a previously imported browser profile (cookies, storage, etc.) into the session.
-- `--update-profile`: Save session state back to the profile when the session ends.
+`browser live` prints the viewer URL; it does not open the user's browser. Use
+`references/live-viewing.md` when sharing it. `browser sessions` is text by
+default; pass `--json` for automation, not `--raw`. Displayed connection URLs
+redact sensitive fields; do not reconstruct credential-bearing connection URLs
+from display output or expose raw auth state.
 
-Profiles are created outside agent workflows via `steel profile import`. Agents should only consume them with the flags above.
+## Profiles and CAPTCHA
 
-## Passthrough bootstrap behavior
-
-For inherited commands, Steel may inject resolved `--cdp` automatically.
-
-- If command already includes `--cdp`: passthrough unchanged.
-- If command includes `--auto-connect`: passthrough unchanged.
-- If both are present: fail fast.
-
-## Recommended lifecycle pattern
+Import a browser profile when the task requires reusable authenticated state;
+do not assume an unknown profile name is created by `start`:
 
 ```bash
-SESSION="job-$(date +%s)"
-steel browser start --session "$SESSION"
-steel browser open https://example.com --session "$SESSION"
-steel browser snapshot -i --session "$SESSION"
-steel browser stop --session "$SESSION"
+steel profile import --help
+steel --json browser start --session "$SESSION" --profile myapp --update-profile
 ```
 
-Use a stable session name to avoid accidental session churn across multi-step workflows.
+`--profile` loads an existing profile. `--update-profile` requests persistence
+back to that profile, and allows creation when supported by the CLI. Use these
+only when the user intends to persist the browser's state.
+
+For manual CAPTCHA solving, create the task's session with `--solve-captcha`
+when the account supports it; `--stealth` enables the automatic-solving preset.
+Observe the actual session state rather than assuming a solve succeeded:
+
+```bash
+steel --json browser captcha solve --session "$SESSION"
+steel --json browser captcha status --wait --session "$SESSION"
+```
+
+For repeated challenges or identity/proxy issues, load `steel-session-debugging`
+to collect evidence, then `steel-reliability` for mitigation. Do not discard an
+existing session or change account configuration just to try another guess.

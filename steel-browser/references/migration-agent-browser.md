@@ -1,57 +1,38 @@
-# Migration from `agent-browser` to `steel browser`
+# Migrating older browser scripts to Steel CLI v0.5
 
-Use this reference when users bring existing upstream scripts or habits.
+v0.5 browser commands use the HTTP Commands API. They are not a vendored
+`agent-browser` interface, so replacing a command prefix is not a complete
+migration. Check the installed command help before reusing old flags.
 
-## Core migration rule
+| Older pattern | v0.5 pattern |
+| --- | --- |
+| `agent-browser open <url>` | Create a named session, then `steel browser navigate <url> --session <name>` |
+| `browser close` | `browser stop --session <name>` for an owned session; `browser tab close` for one tab |
+| Positional screenshot path | `browser screenshot --output <path>` |
+| `wait @e1` | `browser wait --selector @e1` |
+| A delay | `browser wait 1000`; `--timeout 1000` alone is not a delay condition |
+| Automatic JSON when piped, or `--raw` | Explicit `--json` |
+| Generic `--cdp` or `--auto-connect` | Use a named session or an explicitly authorized session ID |
+| Local daemon/browser subprocess | Actions execute in the cloud/self-hosted Commands API service |
 
-Replace the command prefix:
-
-- Before: `agent-browser <command> ...`
-- After: `steel browser <command> ...`
-
-Steel keeps the same CLI interface as agent-browser and adds lifecycle controls.
-
-## Differences
-
-Most commands work with a direct prefix swap. These are the exceptions:
-
-| agent-browser           | steel browser              | reason              |
-| ----------------------- | -------------------------- | ------------------- |
-| `tab 2`                 | `tab switch 2`             | positional → subcmd |
-| `wait @e1`              | `wait --selector @e1`      | positional → flag   |
-| `wait 2000`             | `wait --timeout 2000`      | positional → flag   |
-| `screenshot ./page.png` | `screenshot -o ./page.png` | positional → flag   |
-
-## Example conversion
+## Example
 
 ```bash
-# Before
-agent-browser open https://example.com
-agent-browser snapshot -i
-agent-browser click @e3
-agent-browser get text @e7
-agent-browser wait --load networkidle
-agent-browser screenshot ./page.png
-
-# After — just swap the prefix (aliases handle the rest)
-steel browser start
-steel browser open https://example.com
-steel browser snapshot -i
-steel browser click @e3
-steel browser get text @e7
-steel browser wait --load networkidle
-steel browser screenshot -o ./page.png
-steel browser stop
+SESSION="steel-task-$(date +%s)-$$"
+steel --json browser start --session "$SESSION"
+steel --json browser navigate https://example.com --session "$SESSION"
+steel --json browser snapshot -i --session "$SESSION"
+# Use refs from the current snapshot, not these illustrative values.
+steel --json browser click @e3 --session "$SESSION"
+steel --json browser snapshot -i --session "$SESSION"
+steel --json browser get text @e7 --session "$SESSION"
+steel --json browser screenshot --output ./page.png --session "$SESSION"
+steel --json browser stop --session "$SESSION"
 ```
 
-## Steel-only commands
-
-These are Steel additions not present in agent-browser:
-
-- `steel browser start` — create/attach a cloud browser session
-- `steel browser stop` — release the session
-- `steel browser sessions` — list active sessions
-- `steel browser live` — open the live session viewer
-- `steel browser captcha status/solve` — CAPTCHA management
-
-Use `steel browser --help` to see all currently available commands.
+Do not assume old cookie/storage/settings commands still exist. Use
+`references/steel-browser-commands.md` and the installed help. For browser
+downloads use `wait --download --output`, not a new Files subcommand or a CDP
+workaround. For attachments and cleanup, read
+`references/steel-browser-lifecycle.md`: stopping an ID-attached session does
+not release its cloud browser.
