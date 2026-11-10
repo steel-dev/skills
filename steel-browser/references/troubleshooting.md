@@ -65,8 +65,10 @@ steel --json browser stop --session "$SESSION"
 
 Only stop a session created for this task or explicitly authorized by the user.
 Starting an existing name replaces it; use a fresh task-unique name after a
-verified stop if a restart is actually necessary. ID-attached sessions are not
-released by `browser stop`; read `references/steel-browser-lifecycle.md`.
+verified stop if a restart is actually necessary. An explicit `browser stop
+--session <session-id>` releases even an ID-attached session. Do not stop a
+borrowed session without release authorization; read
+`references/steel-browser-lifecycle.md`.
 
 If the user wants to watch, use the live URL for the existing task session, not
 a new debug browser: `references/live-viewing.md`. A missing viewer does not by

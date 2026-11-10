@@ -34,5 +34,6 @@ Do not assume old cookie/storage/settings commands still exist. Use
 `references/steel-browser-commands.md` and the installed help. For browser
 downloads use `wait --download --output`, not a new Files subcommand or a CDP
 workaround. For attachments and cleanup, read
-`references/steel-browser-lifecycle.md`: stopping an ID-attached session does
-not release its cloud browser.
+`references/steel-browser-lifecycle.md`: an explicit stop releases even an
+ID-attached cloud browser. Only the account-spanning `stop --all` path treats
+attached sessions as detach-only; do not use it as task cleanup.

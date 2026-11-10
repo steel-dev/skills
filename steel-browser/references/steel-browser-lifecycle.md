@@ -40,9 +40,15 @@ failure. Retrieve artifacts before stopping. If the stop fails, retain the
 ownership details for recovery and report cleanup as unresolved.
 
 For a session created elsewhere, actions can use `--session <session-id>`.
-Stopping an ID-attached session only forgets the local attachment; it does not
-release the cloud browser. `browser stop --all` also leaves attached sessions
-running. Release an external session only when explicitly authorized:
+**An explicit `browser stop --session <session-id>` releases that cloud session,
+even when it was only attached by ID.** Do not run it on an externally owned
+session unless the user authorized release. Finishing a read-only inspection
+does not grant that authorization.
+
+Only the `browser stop --all` path forgets ID-attached sessions without releasing
+them, but it also releases other CLI-created sessions. It is not a safe detach
+workaround for a borrowed session. Leave that session running and report the
+ownership boundary. When release is explicitly authorized, target its exact ID:
 
 ```bash
 steel --json sessions get <session-id>
@@ -61,9 +67,13 @@ The API URL precedence is:
 1. `--api-url <url>`.
 2. `--local`: configured `browser.apiUrl`, or `http://localhost:3000/v1`.
 3. `STEEL_API_URL`.
-4. `https://api.steel.dev/v1`.
+4. With no explicit flag/env/local override and an active device credential,
+   the API URL stored with that device login.
+5. Otherwise, `https://api.steel.dev/v1`.
 
-Use one endpoint and mode consistently across the workflow. The old
+An API-key credential selected through `STEEL_API_KEY` does not activate the
+saved-device-endpoint fallback. Use one endpoint and mode consistently across
+the workflow. The old
 `STEEL_BROWSER_API_URL` and `STEEL_LOCAL_API_URL` precedence rules and generic
 `--cdp`/`--auto-connect` passthrough do not apply to v0.5.
 

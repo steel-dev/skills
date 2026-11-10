@@ -26,7 +26,7 @@ function stripQuotes(value) {
   return value;
 }
 
-function parseFrontmatter(content, file) {
+function parseFrontmatter(content, file, blockFields = []) {
   if (!content.startsWith("---\n")) fail(`${file} must start with YAML frontmatter`);
   const end = content.indexOf("\n---\n", 4);
   if (end === -1) fail(`${file} frontmatter is not closed`);
@@ -44,7 +44,16 @@ function parseFrontmatter(content, file) {
 
     const key = match[1];
     const raw = match[2].trim();
+    if (Object.hasOwn(fields, key)) fail(`${file}: duplicate field ${key}`);
 
+    if (raw === "|" && blockFields.includes(key)) {
+      const body = [];
+      while (index + 1 < lines.length && (/^\s+/.test(lines[index + 1]) || !lines[index + 1].trim())) {
+        body.push(lines[++index]);
+      }
+      fields[key] = body.join("\n").trim();
+      continue;
+    }
     if ([">", ">-", "|", "|-"].includes(raw)) {
       fail(`${file} ${key} must be single-line; block scalars are not supported`);
     }
@@ -129,6 +138,63 @@ function hasSteelCliReference(body) {
   return /\bsteel\b/i.test(body);
 }
 
+// Validate/discover the named case folders without invoking a model or service.
+// This uses the same deliberately small YAML subset as the catalog validator.
+export async function validateEvalCases(evalsDir) {
+  let count = 0;
+  for (const entry of await readdir(evalsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith(".") ||
+        ["results", "files", "mocks", "node_modules"].includes(entry.name)) continue;
+    const dir = resolve(evalsDir, entry.name);
+    const label = `evals/${entry.name}`;
+    if (!NAME_RE.test(entry.name)) fail(`${label}: invalid case name`);
+    const yaml = await readFile(resolve(dir, "case.yaml"), "utf8");
+    if (!/^schema_version:\s*(["'])1\.1\1\s*$/m.test(yaml)) fail(`${label}: schema_version must be quoted 1.1`);
+    const meta = parseFrontmatter(`---\n${yaml.trimEnd()}\n---\n`, `${label}/case.yaml`, ["expected_outcome"]);
+    if (Object.keys(meta).some((key) => !["schema_version", "name", "expected_outcome", "context"].includes(key))) {
+      fail(`${label}: unknown case field`);
+    }
+    if (meta.name !== entry.name || typeof meta.expected_outcome !== "string" || !meta.expected_outcome.trim()) {
+      fail(`${label}: name/outcome is missing or mismatched`);
+    }
+    if (meta.context !== undefined) {
+      if (!meta.context || typeof meta.context !== "object" || Array.isArray(meta.context) ||
+          Object.keys(meta.context).join() !== "scaffold_script" || typeof meta.context.scaffold_script !== "string") {
+        fail(`${label}: context must name a scaffold_script`);
+      }
+      const scaffold = resolve(dir, meta.context.scaffold_script);
+      assertInside(dir, scaffold, `${label}: scaffold`);
+      await assertFile(scaffold, `${label}: scaffold`);
+    }
+    const prompt = await readFile(resolve(dir, "prompt.md"), "utf8");
+    const settings = parseFrontmatter(prompt, `${label}/prompt.md`);
+    if (Object.keys(settings).some((key) => !["tags", "max_turns", "timeout_seconds", "allowed_tools"].includes(key))) {
+      fail(`${label}: unknown prompt setting`);
+    }
+    for (const key of ["max_turns", "timeout_seconds"]) {
+      if (!/^[1-9][0-9]*$/.test(settings[key] ?? "")) fail(`${label}: ${key} must be a positive integer`);
+    }
+    for (const key of ["tags", "allowed_tools"]) {
+      if (typeof settings[key] !== "string" || !/^\[\s*[^\[\]\n]+\s*\]$/.test(settings[key])) {
+        fail(`${label}: ${key} must be a non-empty inline list`);
+      }
+    }
+    if (!markdownBody(prompt, label).trim()) fail(`${label}: task prompt is empty`);
+    const gradersDir = resolve(dir, "graders");
+    const graders = (await readdir(gradersDir)).filter((name) => name.endsWith(".md"));
+    if (!graders.length) fail(`${label}: at least one grader is required`);
+    for (const file of graders) {
+      const content = await readFile(resolve(gradersDir, file), "utf8");
+      const grader = parseFrontmatter(content, `${label}/graders/${file}`);
+      if (grader.type !== "llm" || grader.focus !== "trace" || !Number.isFinite(Number(grader.weight)) || !(Number(grader.weight) > 0) || !markdownBody(content, file).trim()) {
+        fail(`${label}/graders/${file}: expected a weighted llm trace assertion`);
+      }
+    }
+    count += 1;
+  }
+  return count;
+}
+
 async function validateSkill(name, meta) {
   if (!NAME_RE.test(name)) fail(`Invalid skill name in manifest: ${name}`);
   if (!meta.cli || typeof meta.cli.include !== "boolean") fail(`${name}: cli.include must be explicit`);
@@ -179,6 +245,8 @@ async function validateSkill(name, meta) {
       if (typeof assertion !== "string" || !assertion.trim()) fail(`${name}: eval ${item.id} has an empty assertion`);
     }
   }
+  const caseCount = await validateEvalCases(resolve(skillDir, "evals"));
+  if (caseCount) console.log(`OK: ${name}: ${caseCount} named eval cases validated`);
 
   const refsDir = resolve(skillDir, "references");
   if (await exists(refsDir)) {
@@ -221,7 +289,9 @@ async function main() {
   console.log(`OK: ${Object.keys(manifest.skills).length} skills validated`);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exit(1);
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+  });
+}

@@ -45,7 +45,9 @@ choose an appropriate local environment rather than assuming cloud reachability.
 
 `SKILL.md` points to focused command, lifecycle, download, live-viewing,
 troubleshooting, migration, and resource references. Existing cases remain in
-`evals/evals.json`; additional cases live in named folders under `evals/`.
+`evals/evals.json`; additional offline planning cases live in named folders under
+`evals/`. Catalog CI discovers and validates their metadata, prompts, and grader
+files; model execution remains a separate evaluation step, not a CI pass claim.
 
 From the repository root:
 
@@ -57,3 +59,9 @@ python3 scripts/check-browser-examples.py --binary /path/to/steel
 The example check appends `--help` to executable command examples in an isolated
 configuration. It checks command/flag compatibility, not live API behavior. CI
 uses the checksum-verified published Linux x86_64 v0.5.0 artifact.
+
+CI also runs `scripts/check-browser-semantics.py` in a network-disabled container
+against a loopback API with synthetic credentials. That check exercises saved
+device endpoint selection and the different explicit-stop/stop-all semantics;
+it does not create real browser sessions. Help parsing alone cannot verify those
+runtime behaviors.
