@@ -4,11 +4,8 @@ Official agent skills for using Steel cloud browsers.
 
 ## Install
 
-Install the Steel CLI using the [official installer](https://setup.steel.dev):
-
-```bash
-curl -fsS https://setup.steel.dev | sh -s -- --agent
-```
+For CLI installation, authorization, and skill loading, follow the
+[setup guide](https://setup.steel.dev/install.md).
 
 Install skills in the environment where the agent's tools run. A local
 installation is not automatically available to a remote or containerized agent.
@@ -45,6 +42,12 @@ Confirm that your client can load `steel-browser`, then check the CLI:
 steel --version
 steel doctor --preflight
 ```
+
+The browser skill targets stable CLI v0.5.0 or later. Any coding harness with
+shell and file-reading tools can use it. If native skill discovery is unavailable,
+install project-locally with `steel skills install steel-browser --agent universal --yes`
+and read `.agents/skills/steel-browser/SKILL.md` directly. The catalog's agent
+list is installation metadata, not a requirement to impersonate a listed client.
 
 If `steel` is not on PATH, use the executable path reported by the installer
 (typically `"$HOME/.steel/bin/steel"`) in each tool call. Shell environment changes

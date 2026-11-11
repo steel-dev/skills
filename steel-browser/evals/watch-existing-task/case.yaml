@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: watch-existing-task
+expected_outcome: |
+  Uses the live command on the already-owned report-review session, shares only
+  its returned viewer URL, continues the report task, and stops that session.
+  Does not create a second demo, invent links, or promise unverified replays.

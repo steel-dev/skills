@@ -16,7 +16,26 @@ jobs:
           node-version: 22
       - name: Validate skills catalog
         run: node scripts/validate-skills.mjs
+      - name: Test eval case validation
+        run: node --test scripts/validate-eval-cases.test.mjs
       - name: Check marketplace.json is in sync with manifest
         run: node scripts/generate-marketplace.mjs --check
+      - name: Check browser examples against stable CLI v0.5.0
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/steel-v050"
+          curl --fail --location --silent --show-error \
+            https://github.com/steel-dev/cli/releases/download/v0.5.0/steel-cli-x86_64-unknown-linux-gnu.tar.gz \
+            --output "$RUNNER_TEMP/steel-v050/release.tar.gz"
+          echo "3034a06043a050053b9c5317a5652567b5bb47454abb316170bac735fc1e2ffa  $RUNNER_TEMP/steel-v050/release.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/steel-v050/release.tar.gz" -C "$RUNNER_TEMP/steel-v050"
+          binary="$(find "$RUNNER_TEMP/steel-v050" -type f -name steel -print -quit)"
+          test -n "$binary"
+          python3 scripts/check-browser-examples.py --binary "$binary"
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --tmpfs /tmp:rw,nosuid,nodev \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/repo,readonly" \
+            --mount "type=bind,src=$binary,dst=/steel,readonly" \
+            python:3.13.7-slim-bookworm python3 /repo/scripts/check-browser-semantics.py --binary /steel
       - name: Smoke test skills installer
         run: npx skills add . --list

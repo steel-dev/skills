@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: borrowed-session
+expected_outcome: |
+  Leaves the borrowed browser running, explains that explicit stop releases it,
+  and avoids stop --all because it would release unrelated CLI-created sessions.

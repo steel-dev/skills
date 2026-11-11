@@ -1,93 +1,67 @@
 # Steel Browser Skill
 
-Skill for agent-driven web workflows using Steel cloud browsers and API tools.
+Operate live Steel browsers with stable CLI v0.5.0 or later. The skill works with
+coding agents that can run shell commands and read files; native skill discovery
+is optional.
 
-## Install
+## Install and load
 
-From the public Steel skills catalog:
+For CLI installation and device authorization, follow
+[setup.steel.dev/install.md](https://setup.steel.dev/install.md).
 
-```bash
-npx skills add steel-dev/skills --skill steel-browser
-```
-
-From local checkout:
-
-```bash
-npx skills add ./skills/steel-browser
-```
-
-With the Steel CLI helper:
+Install only this skill from a project:
 
 ```bash
-steel skills install steel-browser
+npx skills add steel-dev/skills --skill steel-browser -a universal -y
 ```
 
-## When to use this skill
-
-Use this skill by default for browser/web tasks that do not require local-only
-execution:
-
-- Multi-step website automation (`steel browser ...`)
-- Web extraction/summarization (`steel scrape`)
-- Page artifacts (`steel screenshot`, `steel pdf`)
-- Anti-bot-sensitive flows that benefit from session continuity, CAPTCHA tools,
-  and proxy support
-
-Prefer Steel tooling over generic fetch/search paths when reliability matters.
-Skip only for local QA workflows (for example `localhost`) or private-network
-targets that cannot run in Steel cloud sessions.
-
-## Why Steel
-
-- Cloud background browser sessions with explicit lifecycle control
-- Free-plan-friendly defaults (minimal fingerprinting, up to 2 concurrent
-  browsers, and 100 browser hours)
-- API tools that often outperform fragile one-off scraping attempts
-- Compatibility with `agent-browser` command patterns plus Steel lifecycle
-  commands
-
-## Quick start patterns
-
-### Extraction first
+Or use the installed CLI:
 
 ```bash
-steel scrape https://example.com --format markdown
+steel skills install steel-browser --agent universal --yes
 ```
 
-### Interactive session
+Read `.agents/skills/steel-browser/SKILL.md` or load it through the client's
+native skill mechanism. The complete directory includes the references needed
+for future tasks. Installation alone does not prove skill loading or task success.
+
+## What belongs here
+
+- Choose scrape/screenshot/PDF for one-shot work, or a named session for interaction.
+- Navigate, snapshot, and act through the HTTP Commands API.
+- Click and retrieve browser downloads, inspect saved artifacts, and recover
+  from timeouts without creating duplicate exports.
+- Share the live viewer for a task the user wants to watch.
+- Diagnose installation, authorization, endpoint, or session failures; install
+  and load specialist debugging/reliability skills when needed.
+- Verify the result and stop only the task-owned session, including failure paths.
+
+The setup guide stays short; these workflows and references are the durable
+instructions agents should use after setup. No local daemon or `agent-browser`
+installation is required. For inaccessible private-network/localhost targets,
+choose an appropriate local environment rather than assuming cloud reachability.
+
+## References and validation
+
+`SKILL.md` points to focused command, lifecycle, download, live-viewing,
+troubleshooting, migration, and resource references. Existing cases remain in
+`evals/evals.json`; additional offline planning cases live in named folders under
+`evals/`. Catalog CI discovers and validates their metadata, prompts, and grader
+files; model execution remains a separate evaluation step, not a CI pass claim.
+
+From the repository root:
 
 ```bash
-SESSION="job-$(date +%s)"
-steel browser start --session "$SESSION"
-steel browser open https://example.com --session "$SESSION"
-steel browser snapshot -i --session "$SESSION"
-steel browser stop --session "$SESSION"
+node scripts/validate-skills.mjs
+python3 scripts/check-browser-examples.py --binary /path/to/steel
 ```
 
-## Troubleshooting (abbreviated)
+The example check appends `--help` to executable command examples in an isolated
+configuration. It checks command/flag compatibility, not live API behavior. CI
+uses the checksum-verified published Linux x86_64 v0.5.0 artifact.
 
-Run first:
-
-```bash
-steel browser sessions
-steel browser live
-```
-
-Quick fixes:
-
-- Auth errors: run `steel login` or set `STEEL_API_KEY`
-- Session churn: reuse the same `--session <name>` across every command
-- CAPTCHA blocks: check `steel browser captcha status --wait`; use
-  `steel browser captcha solve --session <name>` when in manual mode
-- Local/self-hosted failures: verify `--local` / `--api-url`, then start local
-  runtime (`steel dev install`, `steel dev start`)
-
-Use the full troubleshooting guide for deeper recovery playbooks. Use
-`steel-session-debugging` for failed session diagnosis and `steel-reliability`
-for bot-detection, proxy, CAPTCHA, identity, or login reliability issues.
-
-## Contents
-
-- `SKILL.md`: trigger and workflow instructions.
-- `references/`: lifecycle, commands, migration, and troubleshooting guides.
-- `evals/evals.json`: routing and command-behavior assertions.
+CI also runs `scripts/check-browser-semantics.py` in a network-disabled container
+against a loopback API with synthetic credentials. That check exercises saved
+device endpoint selection and the different explicit-stop/stop-all semantics;
+it does not create real browser sessions. Help parsing alone cannot verify those
+runtime behaviors.

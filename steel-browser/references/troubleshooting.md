@@ -1,176 +1,110 @@
-# Steel Browser Troubleshooting
+# Troubleshooting Steel browser work
 
-Use this reference when automation fails or behaves inconsistently.
+Start with the failing stage and evidence, not a fresh session or a loop of
+retries. Record the command, exit/error, installed CLI version, and the exact
+task-owned session name/ID privately. Redact credentials before reporting.
 
-## First diagnostic pass
-
-Run:
-
-```bash
-steel browser sessions
-steel browser live
-# or: steel browser live --session <name>
-```
-
-Then verify:
-
-- same mode across commands (cloud vs local/self-hosted),
-- same `--session <name>` across workflow steps,
-- auth and endpoint inputs are present.
-
-## Common failures and fixes
-
-### Missing auth
-
-Symptom:
-
-- `Missing browser auth. Run steel login or set STEEL_API_KEY.`
-
-Fix:
+## Installation and authorization
 
 ```bash
-steel login
+steel --version
+steel doctor --preflight
+steel skills doctor
 ```
 
-or set `STEEL_API_KEY` in runtime environment.
+- **Command not found:** use the previously installed executable's full path in
+  each tool call. Shell exports may not persist. If the binary really is absent,
+  follow https://setup.steel.dev/install.md; do not switch CLI packages.
+- **Older CLI:** this skill targets v0.5.0 or later. Update through the setup
+  guide before using version-specific commands.
+- **Pending device approval:** show the current approval URL and wait for the
+  user, then resume the same setup command/profile as directed by the CLI. No
+  localhost callback is needed. If expired, follow the CLI's fresh-request flow.
+- **Auth failure:** use the doctor result and CLI login help. `STEEL_API_KEY`, if
+  set, takes precedence over device login; do not silently clear it or extract
+  a device token as a replacement API key. Do not print auth files.
+- **Skill not loaded:** read the installed `SKILL.md` directly if native skill
+  discovery is unavailable. A readable installation need not be reinstalled.
+- **API/network failure:** check the configured endpoint and report the failing
+  check. Do not change origins or repeatedly retry without new evidence.
 
-### Self-hosted API unreachable
-
-Symptom:
-
-- Errors reaching Steel session API in local/self-hosted mode.
-
-Fix:
-
-1. Check endpoint flags/env resolution.
-2. For local runtime flow:
+## Command failure or version mismatch
 
 ```bash
-steel dev install
-steel dev start
-steel browser start --local --session local-debug
+steel browser --help
+steel browser wait --help
 ```
 
-### Session not reused
+Use the installed command's supported flags. Old examples using `--raw`,
+`browser close`, `--cdp` passthrough, or a `browser download` subcommand do not
+describe v0.5. `--json` is explicit, even when output is piped.
 
-Symptom:
+For a download timeout, see `references/downloads.md`. Click first, then one
+foreground `wait --download --output` in the same session. Check whether the
+action ran or an artifact exists before retrying; do not repeat an export
+blindly. Report a recovery as a recovery, not a clean first attempt.
 
-- New browser appears unexpectedly between steps.
-
-Fix:
-
-- Ensure exact same `--session <name>` value on every command.
-- Ensure commands do not mix cloud and local mode.
-
-### CAPTCHA encountered mid-flow
-
-Important constraints:
-
-- CAPTCHA solving requires a paid Steel plan.
-- Proxies are strongly recommended for CAPTCHA and anti-bot evasion.
-- `--proxy <url>` + CAPTCHA solving is the strongest default combo.
-
-**Checking CAPTCHA solving progress:**
+For an ambiguous side-effecting command, retain the execution ID and inspect
+its state before replaying it:
 
 ```bash
-# Quick status check (shows type if solving)
-steel browser captcha status
-# Output: solving recaptchaV2
-
-# Wait for CAPTCHA to resolve (blocks until done)
-steel browser captcha status --wait
-# Output: solved
-
-# With custom timeout (2 minutes)
-steel browser captcha status --wait --timeout 120000
-
-# Full JSON for debugging
-steel browser captcha status --raw
+steel --json browser status <execution-id> --session "$SESSION"
 ```
 
-Use status checks to:
+## Session continuity and cleanup
 
-- Verify CAPTCHA was detected
-- Wait for auto-solve to complete before continuing
-- Diagnose failed solves (see type in output)
-
-If session is auto solving (`--stealth`):
-
-1. Check status and wait for resolution:
+Use the same session name and endpoint for the task. A new browser appearing
+unexpectedly is a reason to inspect the task's saved mapping, not release every
+session in the account.
 
 ```bash
-steel browser captcha status --wait
+steel --json browser sessions
+steel --json sessions get <owned-session-id>
+steel --json browser stop --session "$SESSION"
 ```
 
-2. Or capture screenshots while waiting:
+Only stop a session created for this task or explicitly authorized by the user.
+Starting an existing name replaces it; use a fresh task-unique name after a
+verified stop if a restart is actually necessary. An explicit `browser stop
+--session <session-id>` releases even an ID-attached session. Do not stop a
+borrowed session without release authorization; read
+`references/steel-browser-lifecycle.md`.
+
+If the user wants to watch, use the live URL for the existing task session, not
+a new debug browser: `references/live-viewing.md`. A missing viewer does not by
+itself prove the browser task failed.
+
+## Self-hosted service
+
+Check the single endpoint precedence chain in
+`references/steel-browser-lifecycle.md`. The self-hosted browser service must
+enable `ENABLE_COMMANDS_API=true`; starting it with `steel dev start` does not
+automatically enable Commands API. Do not send a cloud device grant to a
+different API origin or build auth-bearing CDP URLs from display output.
+
+## CAPTCHA, login, or bot-detection failures
+
+Collect the failing session's evidence before changing proxy, identity, or
+profile settings. If solving is configured for the session/account, inspect its
+actual state using supported commands:
 
 ```bash
-steel browser screenshot /tmp/captcha-auto-progress.png --session <name>
+steel --json browser captcha status --session "$SESSION"
+steel --json browser captcha status --wait --timeout 120000 --session "$SESSION"
+steel --json browser captcha solve --session "$SESSION"
 ```
 
-If session is manual solving (`--session-solve-captcha`):
-
-1. Trigger solve:
+Do not assume every challenge is solvable, promise a bypass, or start a new paid
+configuration without the user's intent. For deeper investigation, install and
+load `steel-session-debugging`; for evidence-backed mitigation, use
+`steel-reliability`. These are separate skills and may not have been installed
+by browser setup:
 
 ```bash
-steel browser captcha solve --session <name>
+steel skills install steel-session-debugging --agent universal --yes
 ```
 
-2. Wait for completion:
-
-```bash
-steel browser captcha status --wait
-```
-
-3. If needed, target a specific task:
-
-```bash
-steel browser captcha solve --session <name> --page-id <id> --task-id <id>
-```
-
-If session has no CAPTCHA solving enabled (default):
-
-1. Start a new session with solving enabled.
-2. Re-open the blocked page and continue.
-
-```bash
-SESSION="captcha-recovery-$(date +%s)"
-steel browser start --session "$SESSION" --session-solve-captcha --proxy http://user:pass@host:port
-steel browser open <blocked-url> --session "$SESSION"
-```
-
-### No active live session
-
-Symptom:
-
-- `No active live session found.`
-
-Fix:
-
-```bash
-steel browser start --session my-job
-steel browser live
-```
-
-### Stale state or stuck mapping
-
-Only reset a session created for the current task. If its ownership is uncertain,
-inspect with `steel --json browser sessions` and report the blocker; do not stop
-other sessions.
-
-```bash
-steel --json browser stop --session "$TASK_SESSION"
-steel --json browser start --session "$TASK_SESSION"
-```
-
-## Safe CDP handling
-
-- Treat `connect_url`/`connectUrl` as display-safe only.
-- Build auth-bearing URLs from `session id` plus environment key in runtime, not from copied log output.
-
-## Recovery pattern for agents
-
-1. Capture failing command and exact error text.
-2. Identify whether issue is auth, mode, endpoint, or session continuity.
-3. Apply the smallest fix that addresses root cause.
-4. Re-run prior command before attempting additional workflow steps.
+Read `.agents/skills/steel-session-debugging/SKILL.md` after installation (or use
+native skill loading). Summarize what failed, what evidence supports the cause,
+what changed, whether recovery worked, and whether exact-session cleanup is
+verified. For docs and support links use `references/resources.md`.

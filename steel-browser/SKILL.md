@@ -2,9 +2,9 @@
 name: steel-browser
 allowed-tools:
   - "Bash(steel:*)"
-description: 'Use this skill for live web tasks where WebFetch or curl would fail or be insufficient: JavaScript-rendered pages, forms, screenshots, PDFs, login flows, CAPTCHA/bot-protection flows, and multi-step navigation. It runs a real Steel cloud browser through the Steel CLI. Use when the agent should visit, click, type, scrape, screenshot, or extract now. Do not use for writing reusable Steel SDK/API code; use steel-developer for code. If a live task fails, hand off to steel-session-debugging; if evidence points to bot detection, proxies, CAPTCHA, or identity, hand off to steel-reliability.'
+description: 'Use this skill for live web tasks where WebFetch or curl would fail or be insufficient: JavaScript-rendered pages, forms, screenshots, PDFs, downloads, login flows, CAPTCHA/bot-protection flows, and multi-step navigation. It runs a real Steel cloud browser through the Steel CLI. Use when the agent should visit, click, type, scrape, screenshot, download, or extract now, or the user wants to watch that browser task. Do not use for writing reusable Steel SDK/API code; use steel-developer. For failed-session investigation use steel-session-debugging; for bot detection, proxies, CAPTCHA, or identity use steel-reliability.'
 license: MIT
-compatibility: claude-code,codex,cursor,opencode,pi
+compatibility: 'Steel CLI v0.5.0 or later; a coding agent with shell and file-reading tools. Native skill discovery is optional.'
 metadata:
   owner: steel
   category: operate
@@ -13,111 +13,127 @@ metadata:
 
 # Steel Browser
 
-Use Steel CLI browser tools to complete live web work now.
+Use Steel CLI to complete the user's live web task, verify the result, and clean
+up the browser sessions created for that task. Keep this skill loaded for later
+browser work; setup instructions are only the entry point.
 
-## Setup
+## Setup and readiness
 
-If Steel is missing, use the official installer:
+If Steel or the skill installation is missing, follow
+https://setup.steel.dev/install.md in the environment where your tools run.
+Do not assume a host installation is available inside a remote sandbox.
 
-```bash
-curl -fsS https://setup.steel.dev | sh -s -- --agent
-```
-
-Install in the environment where the agent's tools run. Follow prerequisite and
-authorization prompts, and report blocked steps instead of claiming setup is complete.
-
-Use the installed Steel executable for the examples below. If `steel` is not on
-PATH, use the path reported by the installer (typically `"$HOME/.steel/bin/steel"`)
-in every tool call. A shell PATH change may not persist to the next call; switching
-to a different CLI package does not fix that environment issue.
-
-Check version and authorization without printing credentials:
+Use the installed executable consistently. If `steel` is not on PATH, substitute
+the reported path, typically `"$HOME/.steel/bin/steel"`, in every command below.
+A shell export may not persist to the next tool call; a different CLI package
+is not a PATH fix.
 
 ```bash
 steel --version
 steel doctor --preflight
 ```
 
-If authentication is required, follow `steel login` and the installed CLI's prompts.
-Ask the user to complete any required approval without exposing credentials in chat.
-Pending authorization is not readiness. Check `--help` for the installed version
-rather than assuming a particular login mechanism or unsupported flags.
+These examples target v0.5.0. For an older binary, update through the setup guide
+before using them. For newer versions, use the installed command's `--help` if
+its flags or result fields differ. Browser actions use the HTTP Commands API;
+there is no local browser daemon or generic `agent-browser` passthrough.
 
-If approval pauses setup, preserve the original browser task. After the user
-approves, resume the saved login as directed by the installed CLI (commonly
-`steel login --resume`) or rerun the same setup command, then continue the
-original task. Do not replace it with a setup demo.
+For device authorization, show the returned approval URL, wait for the user,
+then resume the same setup command/profile as directed by the CLI. Preserve the
+original task across this pause. Do not turn pending authorization into a claim
+that setup succeeded, or copy credentials into chat or application code.
 
-Installing a skill, or finding its `SKILL.md`, does not prove that the current
-client loaded it. Use the client's native skill-loading mechanism before the
-first task. Do not reinstall a readable skill just to prove loading; only
-investigate installation when the client cannot discover it.
+Load the installed skill through the client's native mechanism, or read its
+`SKILL.md` directly if the client has no skill loader. Read the linked references
+when needed. Do not reinstall a readable skill merely to prove that it loaded.
 
-If the CLI or installed skills look broken, run:
+## Choose the smallest useful path
 
-```bash
-steel skills doctor
-```
+- Static page content: `steel scrape <url>`.
+- One-shot image or PDF: `steel screenshot <url>` or `steel pdf <url>`.
+- Forms, navigation, authentication, or browser-native downloads: a named
+  `steel browser` session.
+- Reusable application code: `steel-developer`.
+- Failure investigation: `steel-session-debugging`; mitigation based on evidence
+  of CAPTCHA, proxies, identity, or bot detection: `steel-reliability`.
 
-Setup diagnostics only check installation/API access. They do not prove that
-the client loaded this skill or that the requested browser task succeeded.
-A small content check is:
+If another skill is needed but is not installed, install that specific skill
+with `steel skills install <skill-name> --agent universal --yes`, then read/load
+it. Do not claim a handoff merely by naming an unavailable skill.
 
-```bash
-steel scrape https://example.com
-```
+If the user requested only setup, report what is ready and suggest one relevant
+first task, or offer to summarize a public URL they choose. Wait for their
+choice before opening a demo browser. Otherwise continue the task they already
+requested.
 
-## Choose The Right Path
-
-- Static page content: `steel scrape <url>`
-- Screenshot: `steel screenshot <url>`
-- PDF: `steel pdf <url>`
-- Multi-step interaction, login, forms, or JS-heavy pages: `steel browser ...`
-- Bot detection, CAPTCHA, proxy, or login reliability failure: collect evidence with `steel-session-debugging`, then use `steel-reliability`
-- Reusable application code: use `steel-developer`
-
-Start with the smallest tool that can finish the task. Escalate from scrape/screenshot/PDF to an interactive browser session only when interaction or state is required.
-
-## Interactive Session Workflow
+## Interactive workflow
 
 ```bash
 SESSION="steel-task-$(date +%s)-$$"
 steel --json browser start --session "$SESSION"
 steel --json browser navigate https://example.com --session "$SESSION"
 steel --json browser snapshot -i --session "$SESSION"
+# Replace @e1 with the ref from the current snapshot.
 steel --json browser click @e1 --session "$SESSION"
-steel --json browser wait --load networkidle --session "$SESSION"
 steel --json browser snapshot -i --session "$SESSION"
 steel --json browser stop --session "$SESSION"
 ```
 
-Rules:
+- Use one task-unique name, and pass the same `--session` on every command. Never
+  replace an existing session that may belong to another task.
+- Start with account-compatible defaults. Set a create-time `--timeout` only
+  when the task requires it and the account supports the requested duration.
+- Refresh snapshots after navigation or DOM changes; use their refs instead of
+  guessing stale selectors. Batch only known ordered actions.
+- Prefer a specific visible state or expected text over an unnecessary
+  `networkidle` wait on continuously active pages.
+- Pass `--json` for machine-readable results, even when output is piped. Read
+  `success` and `data`; a command exiting is not proof the task result is correct.
+- Once a session is created, stop that exact session on completion or failure.
+  Do not use `stop --all` for task cleanup. Keep it running only when the user
+  explicitly asks, and say so.
 
-- Always use the same `--session <name>` on every command.
-- Use a task-unique session name; do not reuse or replace a session that may
-  belong to another task.
-- Start with default session settings so the API can apply account-compatible limits. Set `--session-timeout` only when the task needs it and the account supports the requested duration.
-- Take a fresh `snapshot -i` after navigation or DOM changes because element refs expire.
-- Prefer `@eN` refs from snapshots over brittle CSS selectors.
-- Use `steel browser batch` when a sequence needs an action and immediate re-snapshot.
-- For machine consumption, pass `--json` and read the success envelope and its
-  `data`; use the installed version's `--help` rather than assuming a response
-  shape beyond that.
-- Once `start` succeeds, stop that exact session after the task in a finally/
-  failure path: `steel --json browser stop --session "$SESSION"`. Never use
-  `stop --all` for task cleanup. Keep it open only when the user explicitly asks.
+## Downloads
 
-## Troubleshooting
+Click the actual download link, then use **one foreground** download wait in the
+same session. Starting the wait in the background before the click can block
+the action behind a pending Commands API request and cause a timeout.
 
-1. Run `steel skills doctor` for install or CLI-skill mismatch issues.
-2. Run `steel doctor --preflight` for auth/API issues.
-3. Use `steel browser sessions` and `steel browser live --session <name>` for active sessions.
-4. For failed completed sessions, load `steel-session-debugging`.
-5. For bot/proxy/CAPTCHA/identity fixes, load `steel-reliability`.
+```bash
+steel --json browser click @e4 --session "$SESSION"
+steel --json browser wait --download --output ./report.csv --session "$SESSION"
+```
+
+Inspect the saved file and derive the requested answer from its contents before
+reporting success. There is no `browser download` subcommand. Read
+`references/downloads.md` for timeout recovery, output handling, and failure
+evidence; do not blindly click again to recover a download.
+
+## Let the user watch
+
+When the user asks to watch, or accepts an offer to watch the task already being
+performed, run `steel browser live --session <task-name>` and present the actual
+viewer URL as **Watch your cloud browser**. Continue the useful task, then clean
+up its session normally. A viewer is not a separate demo or a reason to leave
+the session running. Read `references/live-viewing.md` for the full workflow.
+
+## Troubleshooting and reporting
+
+Use `references/troubleshooting.md` for a small diagnostic/recovery step rather
+than retrying blindly. Preserve the failed command and whether recovery worked.
+Do not expose tokens, cookies, passwords, or raw credential-bearing logs.
+
+In the final response, distinguish setup readiness, the verified task result,
+and session cleanup. Include the local artifact path when relevant. If a task
+has not run, timed out, or recovered after a failure, say so instead of treating
+a successful doctor check as a task pass.
 
 ## References
 
-- `references/steel-browser-commands.md`: command reference.
-- `references/steel-browser-lifecycle.md`: session lifecycle discipline.
-- `references/troubleshooting.md`: recovery playbooks.
-- `references/migration-agent-browser.md`: migration from upstream `agent-browser`.
+- `references/steel-browser-commands.md`: v0.5 command patterns and flags.
+- `references/steel-browser-lifecycle.md`: ownership, endpoints, profiles, and stop behavior.
+- `references/downloads.md`: browser-native file retrieval and timeout recovery.
+- `references/live-viewing.md`: share a viewer for the user's task.
+- `references/troubleshooting.md`: diagnosis, bounded recovery, and skill handoffs.
+- `references/migration-agent-browser.md`: migrate scripts without assuming passthrough.
+- `references/resources.md`: maintained docs, SDK examples, and support links.
