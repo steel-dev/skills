@@ -22,6 +22,6 @@ Use computer-use integrations when the model should reason from screenshots and 
 
 ## References
 
-- Claude Computer Use: https://docs.steel.dev/integrations/claude-computer-use
-- OpenAI Computer Use: https://docs.steel.dev/integrations/openai-computer-use
-- Gemini Computer Use: https://docs.steel.dev/integrations/gemini-computer-use
+- Claude Computer Use: https://steel.dev/docs/integrations/claude-computer-use
+- OpenAI Computer Use: https://steel.dev/docs/integrations/openai-computer-use
+- Gemini Computer Use: https://steel.dev/docs/integrations/gemini-computer-use

@@ -65,5 +65,5 @@ Keep proxy and CAPTCHA snippets minimal here. For mitigation strategy, read `../
 ## Source Of Truth
 
 - Python SDK/types: https://github.com/steel-dev/steel-python
-- API reference: https://steel.apidocumentation.com/api-reference
-- Browser Use docs: https://docs.steel.dev/integrations/browser-use
+- API reference: https://steel.dev/docs/reference/api
+- Browser Use docs: https://steel.dev/docs/integrations/browser-use

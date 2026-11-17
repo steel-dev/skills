@@ -97,9 +97,9 @@ steel skills doctor
 
 ## Source-Of-Truth Links
 
-- API reference: https://steel.apidocumentation.com/api-reference
+- API reference: https://steel.dev/docs/reference/api
 - Node SDK/types: https://github.com/steel-dev/steel-node
 - Python SDK/types: https://github.com/steel-dev/steel-python
-- Docs index: `curl -sSfL https://docs.steel.dev/llms.txt`
-- Full docs bundle: `curl -sSfL https://docs.steel.dev/llms-full.txt`
-- Single docs page: `curl -sSfL https://docs.steel.dev/llms.mdx/<page-path>`
+- Docs index: `curl -sSfL https://steel.dev/llms.txt`
+- Full docs bundle: `curl -sSfL https://steel.dev/docs/llms-full.txt`
+- Single docs page: `curl -sSfL https://steel.dev/docs/<page-path>.md`
