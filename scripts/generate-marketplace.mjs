@@ -25,7 +25,6 @@ function toPlugin(name, meta) {
     name,
     source: `./${meta.path ?? name}`,
     description: meta.description,
-    version: meta.version,
     category: meta.category,
     license: "MIT",
     keywords: unique(["steel", ...(meta.platform_features ?? [])]),
