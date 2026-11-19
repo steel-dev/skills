@@ -161,10 +161,10 @@
       "expected_output": "Guidance that says to use the API reference for exact schemas, the steel-node repository/types for SDK option types, and curl -sSfL when fetching docs pages because docs URLs may redirect. It should avoid inventing a full schema from memory.",
       "files": [],
       "assertions": [
-        "References https://steel.apidocumentation.com/api-reference#tag/sessions/post/v1/sessions",
+        "References the API reference at https://steel.dev/docs/reference/api, such as https://steel.dev/docs/reference/api/sessions#create-a-session",
         "References https://github.com/steel-dev/steel-node",
         "Uses curl -sSfL for fetching docs pages",
-        "Mentions llms.txt, llms-full.txt, or /llms.mdx/<page-path> for docs lookup",
+        "Mentions llms.txt, llms-full.txt, or a docs page's .md address for docs lookup",
         "Does not fabricate a complete POST /v1/sessions schema",
         "Says to use API reference and SDK types for exact fields and method signatures"
       ]

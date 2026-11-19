@@ -4,17 +4,17 @@ Use this file to choose the right Steel API and avoid common implementation mist
 
 ## Source Of Truth
 
-- API reference: https://steel.apidocumentation.com/api-reference
-- Sessions create endpoint: https://steel.apidocumentation.com/api-reference#tag/sessions/post/v1/sessions
+- API reference: https://steel.dev/docs/reference/api
+- Sessions create endpoint: https://steel.dev/docs/reference/api/sessions#create-a-session
 - Node SDK: https://github.com/steel-dev/steel-node
 - Python SDK: https://github.com/steel-dev/steel-python
 
 Fetch docs with redirects:
 
 ```bash
-curl -sSfL https://docs.steel.dev/llms.txt
-curl -sSfL https://docs.steel.dev/llms-full.txt
-curl -sSfL https://docs.steel.dev/llms.mdx/overview/sessions-api/quickstart
+curl -sSfL https://steel.dev/llms.txt
+curl -sSfL https://steel.dev/docs/llms-full.txt
+curl -sSfL https://steel.dev/docs/get-started/code.md
 ```
 
 ## Routing

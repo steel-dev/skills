@@ -26,9 +26,9 @@ Ignore Selenium unless the user explicitly asks for it.
 
 ## Links
 
-- Integrations index: https://docs.steel.dev/integrations
-- Cookbook index: https://docs.steel.dev/cookbook
-- Stagehand: https://docs.steel.dev/integrations/stagehand
-- Browser Use: https://docs.steel.dev/integrations/browser-use
-- Playwright: https://docs.steel.dev/integrations/playwright
-- Puppeteer: https://docs.steel.dev/integrations/puppeteer
+- Integrations index: https://steel.dev/docs/integrations
+- Cookbook index: https://steel.dev/docs/examples
+- Stagehand: https://steel.dev/docs/integrations/stagehand
+- Browser Use: https://steel.dev/docs/integrations/browser-use
+- Playwright: https://steel.dev/docs/integrations/playwright
+- Puppeteer: https://steel.dev/docs/integrations/puppeteer

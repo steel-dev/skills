@@ -20,8 +20,8 @@ Use this reference when building product UI around Steel sessions.
 
 ## References
 
-- Embed sessions: https://docs.steel.dev/overview/sessions-api/embed-sessions
-- Live sessions: https://docs.steel.dev/overview/sessions-api/embed-sessions/live-sessions
-- Past sessions: https://docs.steel.dev/overview/sessions-api/embed-sessions/past-sessions
-- Agent traces: https://docs.steel.dev/overview/agent-traces/overview
-- Human-in-the-loop: https://docs.steel.dev/overview/sessions-api/human-in-the-loop
+- Embed sessions: https://steel.dev/docs/observability/embed-a-live-browser
+- Live sessions: https://steel.dev/docs/observability/embed-a-live-browser
+- Past sessions: https://steel.dev/docs/observability/recordings#embed-a-replay
+- Agent traces: https://steel.dev/docs/observability/agent-traces
+- Human-in-the-loop: https://steel.dev/docs/observability/hand-control-to-a-human
