@@ -123,6 +123,13 @@ Use `references/troubleshooting.md` for a small diagnostic/recovery step rather
 than retrying blindly. Preserve the failed command and whether recovery worked.
 Do not expose tokens, cookies, passwords, or raw credential-bearing logs.
 
+If a Steel command keeps failing in a way you cannot fix, the docs are wrong, or
+Steel lacks something the task needs, tell the Steel team with
+`steel feedback <bug|docs|product|other> "<what happened>"`. Add `--goal`,
+`--command` and `--error` for a failure, or `--page` for a docs problem. Send
+only what you observed about Steel, never page content, user data, or
+credentials. If `steel feedback --help` fails, the installed CLI predates it.
+
 In the final response, distinguish setup readiness, the verified task result,
 and session cleanup. Include the local artifact path when relevant. If a task
 has not run, timed out, or recovered after a failure, say so instead of treating

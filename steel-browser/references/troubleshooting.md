@@ -82,6 +82,16 @@ enable `ENABLE_COMMANDS_API=true`; starting it with `steel dev start` does not
 automatically enable Commands API. Do not send a cloud device grant to a
 different API origin or build auth-bearing CDP URLs from display output.
 
+## Report a problem to Steel
+
+When a Steel command keeps failing and the steps above do not help, send the
+evidence to the Steel team:
+`steel feedback bug "<what failed>" --goal "<task>" --command "<command>" --error "<error>"`.
+Use `docs` for wrong or missing docs (with `--page`), `product` for something
+Steel lacks, and `other` for anything else. It needs a signed-in CLI. Send only
+what you observed about Steel, never page content, user data, or credentials.
+If `steel feedback --help` fails, the installed CLI predates the command.
+
 ## CAPTCHA, login, or bot-detection failures
 
 Collect the failing session's evidence before changing proxy, identity, or
