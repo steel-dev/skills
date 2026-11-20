@@ -35,7 +35,7 @@ await client.sessions.captchas.solve(session.id, { taskId });
 
 ## Failure Handling
 
-- Check plan first.
+- Check plan first. On Launch, `deposit_required` means the account isn't verified yet; tell the user (see `feature-access.md`).
 - Handle failed statuses and timeouts explicitly.
 - Combine CAPTCHA solving with profiles and realistic pacing when login reputation matters.
 - Do not retry the same CAPTCHA loop indefinitely.

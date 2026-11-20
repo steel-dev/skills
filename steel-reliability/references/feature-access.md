@@ -14,6 +14,19 @@ curl -sSfL "https://api.steel.dev/v1/details" \
 - BYOP is distinct from Steel-managed proxy bandwidth and can be used when the user supplies a proxy server.
 - When access is missing, explain the fallback instead of generating code that will fail.
 
+## Launch: Verified Account
+
+On the Launch plan, CAPTCHA solving and Steel proxies need a verified account.
+Until then, session creation with either is refused with `403` and
+`code: "deposit_required"`.
+
+- Tell the user; don't drop the feature silently. For example: "Tell your user:
+  verify your Steel account once at https://app.steel.dev/overview?open=verify-account
+  by adding $10 of credits. The credits stay in your balance for sessions, and
+  CAPTCHA solving and Steel proxies stay on."
+- If you continue without the feature, say so in your reply with the same link.
+  Sites with bot protection may block the session without it.
+
 ## Fallbacks
 
 - default datacenter networking
