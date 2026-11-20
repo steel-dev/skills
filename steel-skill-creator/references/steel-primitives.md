@@ -97,7 +97,7 @@ steel browser start --session "$SESSION" --stealth --region iad   # or lax
 
 If the installed steel CLI doesn't accept those flags, the generated skill body should reach for the SDK equivalent and note the fallback.
 
-**Cost note for the generated SKILL.md:** Mention that stealth/proxy is a paid Steel feature so the user isn't surprised by billing. On the Launch plan it also needs a verified account: if session start is refused with `deposit_required`, the generated skill should tell the user to verify once at https://app.steel.dev/overview?open=verify-account ($10 of credits, kept in the balance) rather than quietly dropping `--stealth`. One line is enough; don't lecture.
+**Cost note for the generated SKILL.md:** Mention that stealth/proxy is a paid Steel feature so the user isn't surprised by billing. On the Launch plan it also needs a verified account. A Steel proxy is refused with `deposit_required`; `--stealth` alone starts without CAPTCHA solving and the CLI prints a note. In either case the generated skill should tell the user to verify once at https://app.steel.dev/overview?open=verify-account ($10 of credits, kept in the balance) rather than quietly going on without it. One line is enough; don't lecture.
 
 ## CAPTCHA solving
 
