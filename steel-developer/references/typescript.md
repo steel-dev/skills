@@ -65,7 +65,7 @@ await client.credentials.create({
 
 Keep proxy and CAPTCHA snippets minimal here. For mitigation strategy, read `../steel-reliability/references/mitigation-ladder.md` after installing `steel-reliability`.
 
-- Check plan before Steel-managed `useProxy` or `solveCaptcha`.
+- Check plan before Steel-managed `useProxy` or `solveCaptcha`. On a `403` with `code: "deposit_required"`, tell the user to verify their account (`steel-reliability` feature access) instead of silently removing the option.
 - Use BYOP via `useProxy: { server: process.env.PROXY_SERVER! }` when the user supplies a proxy.
 - Poll CAPTCHA status and handle failures/timeouts explicitly.
 

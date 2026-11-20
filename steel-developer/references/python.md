@@ -58,7 +58,7 @@ Expose CAPTCHA status helpers as Browser Use tools only when the flow needs them
 
 Keep proxy and CAPTCHA snippets minimal here. For mitigation strategy, read `../steel-reliability/references/mitigation-ladder.md` after installing `steel-reliability`.
 
-- Check plan before Steel-managed `use_proxy` or `solve_captcha`.
+- Check plan before Steel-managed `use_proxy` or `solve_captcha`. On a `403` with `code: "deposit_required"`, tell the user to verify their account (`steel-reliability` feature access) instead of silently removing the option.
 - Use BYOP via `use_proxy={"server": os.environ["PROXY_SERVER"]}` when the user supplies a proxy.
 - Poll CAPTCHA status and handle failures/timeouts explicitly.
 

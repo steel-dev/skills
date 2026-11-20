@@ -111,6 +111,11 @@ only when the user intends to persist the browser's state.
 
 For manual CAPTCHA solving, create the task's session with `--solve-captcha`
 when the account supports it; `--stealth` enables the automatic-solving preset.
+On the Launch plan, CAPTCHA solving and Steel proxies need a verified account.
+If start is refused with `deposit_required`, or the CLI notes that it started
+without CAPTCHA solving, pass the link to the user
+(https://app.steel.dev/overview?open=verify-account, $10 of credits once) rather than
+dropping the feature silently.
 Observe the actual session state rather than assuming a solve succeeded:
 
 ```bash
