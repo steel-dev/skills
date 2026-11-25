@@ -15,7 +15,7 @@ Use this decision tree when authoring the generated skill's session-creation ste
 
 ## Known bot-heavy sites — default stealth on
 
-Some domains have aggressive bot detection that blocks or rate-limits non-stealth traffic intermittently, even when no specific challenge appears in the trace. If the target site is one of these (or a subdomain of one), default to `--stealth` / `use_proxy: true` from the first run, **before** looking for trace signals. This is cheap insurance — the false positive cost (paying for a proxy on a site that didn't strictly need it) is low; the false negative cost (a skill that works once and then mysteriously fails in production) is high.
+Some domains have aggressive bot detection that blocks or rate-limits non-stealth traffic intermittently, even when no specific challenge appears in the trace. If the target site is one of these (or a subdomain of one), default to `--stealth` / `use_proxy: true` from the first run, **before** looking for trace signals. This is cheap insurance — the false positive cost (paying for a proxy on a site that didn't strictly need it) is low; the false negative cost (a skill that works once and then mysteriously fails in production) is high. On the Launch plan, `--stealth` and Steel proxies also need a verified account (see the cost note below).
 
 Default-stealth domains include:
 
@@ -97,7 +97,7 @@ steel browser start --session "$SESSION" --stealth --region iad   # or lax
 
 If the installed steel CLI doesn't accept those flags, the generated skill body should reach for the SDK equivalent and note the fallback.
 
-**Cost note for the generated SKILL.md:** Mention that stealth/proxy is a paid Steel feature so the user isn't surprised by billing. One line is enough; don't lecture.
+**Cost note for the generated SKILL.md:** Mention that stealth/proxy is a paid Steel feature so the user isn't surprised by billing. On the Launch plan it also needs a verified account. A Steel proxy is refused with `deposit_required`; `--stealth` alone starts without CAPTCHA solving and the CLI prints a note. In either case the generated skill should tell the user to verify once at https://app.steel.dev/overview?open=verify-account ($10 of credits, kept in the balance) rather than quietly going on without it. One line is enough; don't lecture.
 
 ## CAPTCHA solving
 
@@ -106,7 +106,7 @@ Trigger conditions:
 2. Either trace shows interaction with a CAPTCHA iframe (reCAPTCHA, hCaptcha, Cloudflare turnstile) — search the trace for `iframe` targets with `src` matching these.
 3. The flow hit a `chal_t=` URL and required a click-through.
 
-`--stealth` already includes automatic CAPTCHA solving on paid plans — no separate flag needed. Steel detects reCAPTCHA / hCaptcha / Cloudflare turnstile and solves silently while the skill is running.
+`--stealth` already includes automatic CAPTCHA solving on paid plans (on Launch, once the account is verified) — no separate flag needed. Steel detects reCAPTCHA / hCaptcha / Cloudflare turnstile and solves silently while the skill is running.
 
 If the skill needs to explicitly check or trigger CAPTCHA handling (rare; only when the flow has unusual timing around the challenge), use the `steel-browser` CLI's `captcha status --wait` and `captcha solve` commands in-step:
 
